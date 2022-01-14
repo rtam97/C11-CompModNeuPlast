@@ -16,7 +16,7 @@ from scripts.parameters.param12_LIF_inputs import *
 
 # Neuron parameters dictionary
 # (keys = function input parameters)
-w_in = w_ex
+
 params = {
     'E_leak': E_leak,
     'tau_m': tau_m,

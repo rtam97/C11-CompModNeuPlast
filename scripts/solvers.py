@@ -19,6 +19,7 @@ def eulerLIF(neuron,dt,t_end,init,threshold,spiking,reset,parameters):
             spikeCount += 1
         else:                   # Reset
             V[t + 1] = reset
+
     return V, time, spikeCount
 
 
@@ -54,7 +55,7 @@ def eulerLIFinputs(neuron,synapse,
 
             g_ex[t + 1] = g_ex[t] + dt * synapse(g_ex[t], time[t], ts, tau_e, w_ex)
             g_in[t + 1] = g_in[t] + dt * synapse(g_in[t], time[t], tp, tau_i, w_in)
-            V[t + 1] = V[t] + dt * neuron(V[t], E_leak, tau_m, g_ex[t + 1], E_ex, g_in[t + 1], E_in)
+            V[t + 1] = V[t] + dt * neuron(V[t], g_ex[t + 1], g_in[t + 1], E_leak, tau_m, E_ex, E_in)
 
         elif V[t] != spiking:  # Spike
 

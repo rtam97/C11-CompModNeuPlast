@@ -8,7 +8,7 @@ def LIF(V,E,R,I,tau):
     return (E - V+R*I)/tau
 
 # Leaky integrate-and-fire (LIF) neuron + EI inputs
-def LIF_inputs(V, E_leak, tau_m, g_ex, E_ex, g_in, E_in):
+def LIF_inputs(V, g_ex, g_in, E_leak, tau_m, E_ex, E_in):
     I_ex = g_ex*(E_ex - V)
     I_in = g_in*(E_in - V)
     return (E_leak - V + I_ex + I_in)/tau_m
