@@ -10,7 +10,7 @@ This repository contains the code and the results of the simulations ran as part
   </i>
 </p>
 
-Professor: [Dr. Jochen Triesch](https://www.fias.science/en/neuroscience/research-groups/jochen-triesch/)
+Supervisor: [Dr. Jochen Triesch](https://www.fias.science/en/neuroscience/research-groups/jochen-triesch/)
 
 # Content
 
