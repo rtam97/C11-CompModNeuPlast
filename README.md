@@ -25,7 +25,7 @@ This script contains the functions used to numerically solve the neuron equation
 ### :file_folder: Excercises
 In this directory lie all the individual scripts for each exercis in the course. In theory, one should be able to run them and obtain the figures found in *Results*
 
-## :file_folder: Parameters
+### :file_folder: Parameters
 In this directory lie all the parameter files which are used to run the various python scripts. Because some excercises do not require much parameters, some lack a parameter file.
 
 ## :file_folder: Results
