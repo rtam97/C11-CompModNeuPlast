@@ -45,7 +45,7 @@ potentials = []
 
 
 # Euler integration parameters
-t_end = 1000        # Simulation time       (ms)
+t_end = 2000        # Simulation time       (ms)
 dt = 0.1            # Integration time step (ms)
 
 

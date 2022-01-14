@@ -37,9 +37,10 @@ def generatePeriodicStimulus(frequency,stim_length,time,dt):
     if frequency != 0 :
         ISI = 1000/frequency
 
-        # Find time indexes of stimulus start (into integer)
-        stim_start_idx = [np.where(time == t) for t in time if round(np.mod(round(t,1),round(ISI,1)),1) == 0.0 and round(t) != 0.0]
+        # Find time indexes of stimulus start for a defined length stimulus
+        stim_start_idx = [np.where(time == t) for t in time if round(np.mod(round(t,1),round(ISI,1))) == 0.0 and round(t) != 0.0]
         stim_start_idx = [int(x[0]) for x in stim_start_idx]
+        stim_start_idx = [x for i,x in enumerate(stim_start_idx) if x - stim_start_idx[i-1] > int(stim_length / dt) and i != 0]
 
         # Find time indexes of stimulus end (depends on stim_length)
         stim_end_idx = [x + int(stim_length / dt) for x in stim_start_idx]
@@ -51,6 +52,9 @@ def generatePeriodicStimulus(frequency,stim_length,time,dt):
         # Find exact times of indexes in time vector
         for s in stim_idx:
             for x in s:
-                stim.append(time[x])
+                try:
+                    stim.append(time[x])
+                except Exception as e:
+                    pass
 
     return stim
