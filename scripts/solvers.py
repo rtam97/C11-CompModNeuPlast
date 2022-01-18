@@ -2,12 +2,10 @@ import numpy as np
 from scripts.neurons import *
 from time import time as stopwatch
 
-# General purpose formula for euler integration
-def euler(function,prev,dt,params):
-    return prev + dt*(function(prev,**params))
-
 
 # Euler integration method with spiking and voltage resetting for LIF neurons WITHOUT INPUT
+# FOR NOW LIF W/o INPUTS ONLY WORKS WITH THIS
+# IN THE FUTURE I WILL PUT EVERYTHIN IN A SINGLE EULER INTEGRATION FUNCTION
 def eulerLIF(neuron,dt,t_end,init,threshold,spiking,reset,parameters):
 
     # Define time vector and voltage vector
@@ -20,8 +18,6 @@ def eulerLIF(neuron,dt,t_end,init,threshold,spiking,reset,parameters):
     for t in range(len(time) - 1):
         if V[t] <= threshold:   # Solve equation
             V[t + 1] = V[t] + dt * neuron(V[t], **parameters)
-            # V[t + 1] = euler(neuron,V[t],dt,parameters)
-
         elif V[t] != spiking:   # Spike
             V[t + 1] = spiking
             spikeCount += 1
