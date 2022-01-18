@@ -10,7 +10,7 @@ from scripts.neurons import LIF
 
 # ----------------------------------------------------- PARAMETERS -----------------------------------------------------
 
-from scripts.parameters.param11_LIF_param import *
+from scripts.parameters.param11_LIF import *
 
 # ----------------------------------------------------- SIMULATION -----------------------------------------------------
 
@@ -19,9 +19,6 @@ spikeCounts = []
 firingRates = []
 potentials  = []
 
-# Euler integration parameters
-t_end = 100         # Simulation time       (ms)
-dt = 0.1            # Integration time step (ms)
 
 # Simulate for multiple current inputs
 for I_ext in currents:

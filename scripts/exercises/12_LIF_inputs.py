@@ -5,9 +5,8 @@
 # --------------------------------------------------------- #
 
 import matplotlib.pyplot as plt
-from scripts.solvers import eulerLIFinputs as solve
+from scripts.solvers import eulerNeuron as solve
 from scripts.neurons import *
-
 
 
 # ----------------------------------------------------- PARAMETERS -----------------------------------------------------
@@ -45,19 +44,22 @@ potentials = []
 
 
 # Euler integration parameters
-t_end = 2000        # Simulation time       (ms)
+t_end = 1000        # Simulation time       (ms)
 dt = 0.1            # Integration time step (ms)
 
 
 # Euler integration
-(V,g_ex,g_in,time,sc) = solve(neuron=LIF_inputs,
+(V,g_ex,g_in,time,sc,st) = solve(neuron=LIF_inputs,
                               synapse=g_synapse,
+                              Ne = 1,
+                              Ni = 1,
                               dt=dt,
                               t_end=t_end,
                               init=V_reset,
                               threshold=V_theta,
                               spiking=V_spike,
                               reset=V_reset,
+                              stim_type='periodic',
                               **params)
 
 

@@ -11,7 +11,7 @@ def LIF(V,E,R,I,tau):
 def LIF_inputs(V, g_ex, g_in, E_leak, tau_m, E_ex, E_in):
     I_ex = g_ex*(E_ex - V)
     I_in = g_in*(E_in - V)
-    return (E_leak - V + I_ex + I_in)/tau_m
+    return (E_leak - V + np.sum(I_ex) + np.sum(I_in))/tau_m
 
 
 # Conductance of EI inputs
@@ -25,10 +25,18 @@ def g_synapse(g,t,t_stim,tau,w):
 # Dirac's delta function
 def dirac(t,t_inputs):
     delta = 0
-    for tstim in t_inputs:
-        if t == tstim :
-            delta += 1
+    if t in t_inputs:
+        delta = 1
+
     return delta
+
+
+# Generates the spike times at which an input spike is generated, sampling from Poisson distribution
+# Algorithm from 'Theoretical Neuroscience' by Dayan & Abbott (2001), Page 30: The Poisson Spike Generator
+def generatePoissonStimulus(rate,time,dt):
+    spike_times = [t for t in time if rate*(dt/1000) > np.random.random()]
+    return spike_times
+
 
 # Defines the timepoints at which to induce a periodic stimulus based on desired frequency of given length in ms
 def generatePeriodicStimulus(frequency,stim_length,time,dt):
@@ -38,9 +46,14 @@ def generatePeriodicStimulus(frequency,stim_length,time,dt):
         ISI = 1000/frequency
 
         # Find time indexes of stimulus start for a defined length stimulus
-        stim_start_idx = [np.where(time == t) for t in time if round(np.mod(round(t,1),round(ISI,1))) == 0.0 and round(t) != 0.0]
-        stim_start_idx = [int(x[0]) for x in stim_start_idx]
-        stim_start_idx = [x for i,x in enumerate(stim_start_idx) if x - stim_start_idx[i-1] > int(stim_length / dt) and i != 0]
+        stim_start_idx = [t for t in range(len(time) - 1)
+                          if round(np.mod(round(time[t],1),round(ISI,1))) == 0.0
+                          and round(time[t]) != 0.0]
+
+        # Reject simulus start points falling within the previous stimulus length
+        stim_start_idx = [x for i,x in enumerate(stim_start_idx)
+                          if x - stim_start_idx[i-1] > int(stim_length / dt)
+                          and i != 0]
 
         # Find time indexes of stimulus end (depends on stim_length)
         stim_end_idx = [x + int(stim_length / dt) for x in stim_start_idx]
