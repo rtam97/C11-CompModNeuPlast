@@ -109,24 +109,17 @@ For this exercise, a function generating (homogeneous) Poisson spike trains was 
 
 Furthermore, the LIF neuron was expanded to allow for an arbitrary number of excitatory and inhibitory neurons.
 
-The neuron was simulated with 10 excitatory and 10 inhibitory input synapses, for a total of 10 s across 10 trials. 
+The neuron was simulated with 10 excitatory and 10 inhibitory input synapses, initially with equal strength (**We = Wi = 0.5**), and an expected firing rate of **10 Hz**. In order to comply with such a firing rate, the time step was increased to 1 ms.
 
-The firing rate was increased from 10 Hz to 100 Hz.
+50 simulations (trials) of 50 seconds each were performed in order to obtain enough data points to compute statistics for the *inter-spike-intervals* (**ISI**) the *coefficient of variation* (**CV**). 
 
-The histograms of the *inter-spike-intervals* (**ISI**) and of the *coefficient of variation* (**CV**) are generated (still doesn't function perfectly), to check for input irregularity.
-
-
+Histograms for both ISI and CV are plotted, together with the voltage time series of the last 50s trial. 
 <p align="center">
-  <img src="14_poisson_10s_10trials_rate10hz.png" alt="drawing" width="19%"/>
-  <img src="14_poisson_10s_10trials_rate25hz.png" alt="drawing" width="19%"/>
-  <img src="14_poisson_10s_10trials_rate50hz.png" alt="drawing" width="19%"/>
-  <img src="14_poisson_10s_10trials_rate75hz.png" alt="drawing" width="19%"/>
-  <img src="14_poisson_10s_10trials_rate100hz.png" alt="drawing" width="19%"/>
+  <img src="14_poisson_0.png" alt="drawing" width="50%"/>
 </p>
 
-Only when the expected firing rate is increased to at least 75 Hz do we begin approaching a CV of 1.
 
-parameters used were:
+Parameters used:
 ```python
 # Neuron parameters
 E_leak = -60         # Leak reversal potential  (mV)
@@ -135,26 +128,39 @@ tau_m = 20           # Membrane time constant   (ms)    --> Rm*Cm [implicit]
 # Excitatory input parameters
 E_ex    = 0     # Reversal potential    (mV)
 tau_e   = 3     # Time constant         (ms)
-w_ex    = 3.0   # Synapse strength      (--)
+w_ex    = 0.5   # Synapse strength      (--)
 t_ex    = 1     # Stimulus duration     (ms)
 # Poisson spiking
-f_ex    = 10  # Firing rate           (Hz) THIS ONE VARIES
+f_ex    = 10  # Firing rate           (Hz)
 
 # Inhibitory input parameters
 E_in    = -80   # Reversal potential    (mV)
 tau_i   = 5     # Time constant         (ms)
-w_in    = 3.0   # Synapse strength      (--)
+w_in    = 0.5   # Synapse strength      (--)
 t_in    = 1     # Stimulus duration     (ms)
 # Poisson spiking
-f_in    = 10   # Firing rate           (Hz) THIS ONE VARIES
+f_in    = 10   # Firing rate           (Hz)
 
 # Reset potential parameters
 V_spike = 0         # Spike amplitude       (mV)
 V_reset = -70       # Reset potential       (mV)
 V_theta = -50       # Threshold potential   (mV)
 V_init = V_reset    # Initial potential     (mV)
+
+# Euler integration parameters
+t_end = 50000      # Simulation time       (ms)
+dt = 1            # Integration time step (ms)
+
 ```
 
 
-⚠️ This part is still work in progress. The parameters used here are different than the one mentioned in the paper and if I use the same, I do not get the same results. Also the code is somewhat unstable at the moment. ⚠️
+Secondly, a series of 10 simulation experiments (like the one described above - 50x50s) were performed with excitatory synaptic strength linearly increasing from 0.5 to 1.5 in order to find out at which point the synaptic inputs are balanced between excitation and inhibition.
 
+Apparently, increasing the excitatory synaptic strength by 0.1 already renders the inputs more inbalanced than before. Possibly a smaller increase (eg 0.5) might instead produce an increase in input balance, after which it will start to decline, as we observe.
+
+<p align="center">
+  <img src="14_poisson_1.png" alt="drawing" width="40%"/>
+  <img src="14_poisson_2.png" alt="drawing" width="40%"/>
+  <img src="14_poisson_3.png" alt="drawing" width="40%"/>
+  <img src="14_poisson_4.png" alt="drawing" width="40%"/>
+</p>
