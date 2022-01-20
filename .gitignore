@@ -54,4 +54,4 @@ docs/_build/
 
 notebooks/
 thrash/
-email.txt
+*.txt

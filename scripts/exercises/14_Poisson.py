@@ -155,7 +155,7 @@ plt.xlabel('Synaptic strength')
 plt.ylabel('ISI (ms)')
 
 plt.subplot(1,2,2)
-plt.plot(WEX,ISI_total)
+plt.plot(WEX,CV_total)
 plt.title('CV vs Synaptic Strength')
 plt.xlabel('Synaptic strength')
 plt.ylabel('CV')
