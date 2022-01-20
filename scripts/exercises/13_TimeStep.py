@@ -35,7 +35,7 @@ for i in [1,2,3]:
         g_num = np.zeros(len(time))
         g_num[0] = 1
         for t in range(len(time)-1):
-            g_num[t+1] = g_num[t] + dt*(g_synapse(g_num[t],time[t],[],tau_e,w_ex))
+            g_num[t+1] = g_num[t] + dt*(g_synapse(g_num[t],t,np.zeros(len(time)),tau_e,w_ex))
 
         plt.plot(time,g_num,'--',label='dt = %s'%(dt))
 

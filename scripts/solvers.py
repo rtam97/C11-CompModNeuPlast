@@ -62,8 +62,12 @@ def eulerNeuron(neuron,synapse,         # Functions describing the evolution of 
 
     # Spike time inputs
     if stim_type == 'poisson':
-        st_ex = [generatePoissonStimulus(f_ex,time,dt) for st in range(len(g_ex))]
-        st_in = [generatePoissonStimulus(f_in,time,dt) for st in range(len(g_in))]
+        # st_ex = [generatePoissonStimulus(f_ex,time,dt) for st in range(len(g_ex))]
+        # st_in = [generatePoissonStimulus(f_in,time,dt) for st in range(len(g_in))]
+
+        st_ex = [generatePoissonInput(f_ex,time,dt) for st in range(len(g_ex))]
+        st_in = [generatePoissonInput(f_in, time, dt) for st in range(len(g_in))]
+        print(0)
 
     elif stim_type == 'periodic':
         st_ex = generatePeriodicStimulus(f_ex, t_ex, time, dt)
@@ -88,16 +92,16 @@ def eulerNeuron(neuron,synapse,         # Functions describing the evolution of 
         # Update EXCITATORY synaptic conductances
         if Ne > 1:
             for m in range(Ne):
-                g_ex[m][t + 1] = g_ex[m][t] + dt * synapse(g_ex[m][t], time[t], st_ex[m], tau_e, w_ex)
+                g_ex[m][t + 1] = g_ex[m][t] + dt * synapse(g_ex[m][t], t, st_ex[m], tau_e, w_ex)
         elif Ne == 1:
-            g_ex[0][t + 1] = g_ex[0][t] + dt * synapse(g_ex[0][t], time[t], st_ex, tau_e, w_ex)
+            g_ex[0][t + 1] = g_ex[0][t] + dt * synapse(g_ex[0][t], t, st_ex, tau_e, w_ex)
 
         # Update INHIBITORY synaptic conductances
         if Ni > 1:
             for n in range(Ni):
-                g_in[n][t + 1] = g_in[n][t] + dt * synapse(g_in[n][t], time[t], st_in[n], tau_i, w_in)
+                g_in[n][t + 1] = g_in[n][t] + dt * synapse(g_in[n][t], t, st_in[n], tau_i, w_in)
         elif Ni == 1:
-            g_in[0][t + 1] = g_in[0][t] + dt * synapse(g_in[0][t], time[t], st_in, tau_i, w_in)
+            g_in[0][t + 1] = g_in[0][t] + dt * synapse(g_in[0][t], t, st_in, tau_i, w_in)
 
         # Check threshold potential
         if V[t] <= threshold:   # Update VOLTAGE

@@ -26,10 +26,10 @@ for I_ext in currents:
     # Neuron parameters dictionary
     # (keys = function input parameters)
     params = {
-        'E' : E_leak,
-        'R' : R_m,
-        'I' : I_ext,
-        'tau' : tau_m
+        'E_leak' : E_leak,
+        'R_m' : R_m,
+        'I_ext' : I_ext,
+        'tau_m' : tau_m
     }
 
     # Integration routine

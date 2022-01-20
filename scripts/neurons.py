@@ -4,8 +4,8 @@ import numpy as np
 # --------------------------------------------- NEURONS --------------------------------------------- #
 
 # Leaky integrate-and-fire (LIF) neuron
-def LIF(V,E,R,I,tau):
-    return (E - V+R*I)/tau
+def LIF(V_m,E_leak,R_m,I_ext,tau_m):
+    return (E_leak - V_m+R_m*I_ext)/tau_m
 
 # Leaky integrate-and-fire (LIF) neuron + EI inputs
 def LIF_inputs(V, g_ex, g_in, E_leak, tau_m, E_ex, E_in):
@@ -16,7 +16,12 @@ def LIF_inputs(V, g_ex, g_in, E_leak, tau_m, E_ex, E_in):
 
 # Conductance of EI inputs
 def g_synapse(g,t,t_stim,tau,w):
-    return -g / tau + w * dirac(t, t_stim)
+
+    # G = -g / tau + w * dirac(t, t_stim)
+
+    G = -g / tau + w * t_stim[t]
+
+    return G
 
 
 # --------------------------------------------- INPUTS --------------------------------------------- #
@@ -31,10 +36,17 @@ def dirac(t,t_inputs):
     return delta
 
 
+def generatePoissonInput(rate,time,dt):
+    stimulus = np.zeros(len(time))
+    for t in range(len(time)):
+        if rate*dt/1000 > np.random.random():
+            stimulus[t] = 1
+    return stimulus
+
 # Generates the spike times at which an input spike is generated, sampling from Poisson distribution
 # Algorithm from 'Theoretical Neuroscience' by Dayan & Abbott (2001), Page 30: The Poisson Spike Generator
 def generatePoissonStimulus(rate,time,dt):
-    spike_times = [t for t in time if rate*(dt/1000) > np.random.random()]
+    spike_times = [t for t in time if rate*dt/1000 > np.random.random()]
     return spike_times
 
 
@@ -42,6 +54,8 @@ def generatePoissonStimulus(rate,time,dt):
 def generatePeriodicStimulus(frequency,stim_length,time,dt):
     stim_idx = []
     stim = []
+    stimulus = np.zeros(len(time))
+
     if frequency != 0 :
         ISI = 1000/frequency
 
@@ -70,4 +84,7 @@ def generatePeriodicStimulus(frequency,stim_length,time,dt):
                 except Exception as e:
                     pass
 
-    return stim
+        # Create input vector
+        stimulus[np.concatenate(stim_idx)] = 1
+
+    return stimulus

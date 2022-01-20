@@ -21,3 +21,8 @@ V_spike = 0         # Spike amplitude       (mV)
 V_reset = -70       # Reset potential       (mV)
 V_theta = -50       # Threshold potential   (mV)
 V_init = V_reset    # Initial potential     (mV)
+
+
+# Euler integration parameters
+t_end = 1000        # Simulation time       (ms)
+dt = 0.1            # Integration time step (ms)
