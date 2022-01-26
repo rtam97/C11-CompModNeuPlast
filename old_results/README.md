@@ -160,7 +160,5 @@ Apparently, increasing the excitatory synaptic strength by 0.1 already renders t
 
 <p align="center">
   <img src="14_poisson_1.png" alt="drawing" width="40%"/>
-  <img src="14_poisson_2.png" alt="drawing" width="40%"/>
-  <img src="14_poisson_3.png" alt="drawing" width="40%"/>
-  <img src="14_poisson_4.png" alt="drawing" width="40%"/>
+  <img src="14_poisson_CVISI.png" alt="drawing" width="40%"/>
 </p>
