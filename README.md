@@ -12,23 +12,20 @@ This repository contains the code and the results of the simulations ran as part
 
 Supervisor: [Prof. Dr. Jochen Triesch](https://www.fias.science/en/neuroscience/research-groups/jochen-triesch/)
 
-# Content
+⚠️ As of 26/01/2022 I have rewritten the entire code so that it is object-oriented. Much easier to run simulations now! ⚠️
 
-## :file_folder: Scripts
 
-### `neurons.py`
-This script contains a variety of functions, including equations for the simulated neurons and ways to generate stimuli 
 
-### `solvers.py`
-This script contains the functions used to numerically solve the neuron equations using the forward Euler method. At the moment there is a separate integration function for each neuron. In the future I would like to make a single function which can solve any neuron in the course... WIP!
+# Contents of the repository
 
-### :file_folder: Excercises
-In this directory lie all the individual scripts for each exercis in the course. In theory, one should be able to run them and obtain the figures found in *Results*
+## 📂 neurosim
 
-### :file_folder: Parameters
-In this directory lie all the parameter files which are used to run the various python scripts. Because some excercises do not require much parameters, some lack a parameter file.
+In this directory there is a single file `neurosim.py` which contains all the classes needed to run a simulation
 
-## :file_folder: Results
-In this directory lie all the figures that have been created with the scripts found in *Exercises*. Maybe in the end I will upload the report here
+## 📂 exercises
 
----
+In this directory are all the scripts used to generate the figures for the exercises
+
+## 📂 results
+
+In this directory are all the figures generated with the scripts in the folder exercises
