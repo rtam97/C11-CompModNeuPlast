@@ -11,7 +11,7 @@ lif = Neuron(type='LIF')
 # --------------------- CONSTANT CURRENT : 2.0 nA ---------------------
 
 # Create a constant stimulus with current 2.0 nA
-stim1 = Stimulus(neuron=lif,type='constant',I_ext=2.0)
+stim1 = Stimulus(neuron=lif, stim_type='constant', I_ext=2.0)
 
 # Instantiate a simulation object
 sim1 = Simulation(neuron=lif,stimulus=stim1,t_sim=100)
@@ -25,7 +25,7 @@ sim1.saveInputParameters('param1.txt')
 # --------------------- CONSTANT CURRENT : 4.0 nA ---------------------
 
 # Create a constant stimulus with current 2.0 nA
-stim2 = Stimulus(neuron=lif,type='constant',I_ext=4.0)
+stim2 = Stimulus(neuron=lif, stim_type='constant', I_ext=4.0)
 
 # Instantiate a simulation object
 sim2 = Simulation(neuron=lif,stimulus=stim2,t_sim=100)

@@ -3,159 +3,67 @@ from scipy.optimize import curve_fit
 from matplotlib import pyplot as plt
 from time import time as sw
 import sys
+from enum import Enum
 
 
 # ------------------------------- NEURON ----------------------------------- #
 
 class Neuron:
 
-    # Define neuron parameters and synaptic inputs
+    # Initialize neuron
     def __init__(self,type,**kwargs):
 
+        # Define default values
+        self.defaultValues = dict(E_leak=-60, tau_m=20, R_m=10,
+                             V_init=-70, V_reset=-70, V_theta=-50, V_spike=0,
+                             N_exc=0, w_exc=0.5, E_exc=0, tau_e=3,
+                             N_inh=0, w_inh=3, E_inh=-80, tau_i=5)
+
+        # Neuron type (ONLY LIF FOR NOW)
         self.type = type
 
-        # -------------------------------------------- NEURON PARAMETERS --------------------------------------------- #
+        # Iterate through default values
+        for key, defVal in self.defaultValues.items():
 
-        # Leak reversal potential  (mV)
-        if 'E_leak' in kwargs.keys():
-            self.E_leak  = kwargs['E_leak']
-        else:
-            self.E_leak = -60
+            # Set neuron attribute to desired OR default value
+            setattr(self, key, kwargs.get(key, defVal))
 
-        # Membrane time constant (ms)    --> Rm*Cm [implicit]
-        if 'tau_m' in kwargs.keys():
-            self.tau_m = kwargs['tau_m']
-        else:
-            self.tau_m = 20
+            # Set synaptic attributes
+            self.__set_synaptic_attributes(key)
 
-        # Membrane resistance      (Mohm)
-        if 'R_m' in kwargs.keys():
-            self.R_m = kwargs['R_m']
-        else:
-            self.R_m = 10
+    # Set attributes to synapse
+    def __set_synaptic_attributes(self, key):
 
-        # Initial potential     (mV)
-        if 'V_init' in kwargs.keys():
-            self.V_init = kwargs['V_init']
-        else:
-            self.V_init = -70
+        # Excitatory attributes
+        if key == 'E_exc':
+            if not isinstance(self.E_exc, list):
+                self.E_exc = [self.E_exc] * self.N_exc
+        elif key == 'w_exc':
+            if not isinstance(self.w_exc, list):
+                self.w_exc = [self.w_exc] * self.N_exc
+        elif key == 'tau_e':
+            if not isinstance(self.tau_e, list):
+                self.tau_e = [self.tau_e] * self.N_exc
 
-        # Reset potential       (mV)
-        if 'V_reset' in kwargs.keys():
-            self.V_reset = kwargs['V_reset']
-        else:
-            self.V_reset = -70
+        # Inhibitory attributes
+        elif key == 'E_inh':
+            if not isinstance(self.E_inh, list):
+                self.E_inh = [self.E_inh] * self.N_inh
+        elif key == 'w_inh':
+            if not isinstance(self.w_inh, list):
+                self.w_inh = [self.w_inh] * self.N_inh
+        elif key == 'tau_i':
+            if not isinstance(self.tau_i, list):
+                self.tau_i = [self.tau_i] * self.N_inh
 
-        # Threshold potential   (mV)
-        if 'V_theta' in kwargs.keys():
-            self.V_theta = kwargs['V_theta']
-        else:
-            self.V_theta = -50
-
-        # Spike amplitude       (mV)
-        if 'V_spike' in kwargs.keys():
-            self.V_spike = kwargs['V_spike']
-        else:
-            self.V_spike = 0
-
-        # ------------------------------------------- EXCITATORY SYNAPSES -------------------------------------------- #
-
-
-        # Excitatory synapses
-        if 'N_exc' in kwargs.keys() and kwargs['N_exc'] != 0:
-
-            self.N_exc  = kwargs['N_exc']
-
-            # Reversal potential (mV)
-            if 'E_exc' in kwargs.keys():                        # IF :  reversal potential is provided
-                if not isinstance(kwargs['E_exc'],list):            # IF : only one value is given as int/float
-                    self.E_exc = [kwargs['E_exc']]*self.N_exc
-                elif len(kwargs['E_exc']) == self.N_exc:            # IF : nr of values == nr of synapses (N)
-                    self.E_exc = kwargs['E_exc']
-                else:                                               # ELSE : default value N times
-                    self.E_exc = [0] * self.N_exc
-            else:                                               # ELSE: default value N times
-                self.E_exc = [0]* self.N_exc
-
-            # Time constant (ms)
-            if 'tau_e' in kwargs.keys():
-
-                if not isinstance(kwargs['tau_e'],list):
-                    self.tau_e = [kwargs['tau_e']]*self.N_exc
-                elif len(kwargs['tau_e']) == self.N_exc:
-                    self.tau_e = kwargs['tau_e']
-                else:
-                    self.tau_e = [3] * self.N_exc
-            else:
-                self.tau_e = [3] * self.N_exc
-
-            # Synaptic strength
-            if 'w_exc' in kwargs.keys():
-                if not isinstance(kwargs['w_exc'],list):
-                    self.w_exc = [kwargs['w_exc']]*self.N_exc
-                elif len(kwargs['w_exc']) == self.N_exc:
-                    self.w_exc = kwargs['w_exc']
-                else :
-                    self.w_exc = [0.5]*self.N_exc
-            else:
-                self.w_exc = [0.5]*self.N_exc
-        else:
-            self.N_exc = 0
-            self.w_exc = []
-            self.E_exc = []
-            self.tau_e = []
-
-        # ------------------------------------------- INHIBITORY SYNAPSES -------------------------------------------- #
-        # Inhibitory synapses
-        if 'N_inh' in kwargs.keys():
-
-            self.N_inh = kwargs['N_inh']
-
-            # Reversal potential (mV)
-            if 'E_inh' in kwargs.keys():
-                if not isinstance(kwargs['E_inh'],list):
-                    self.E_inh = [kwargs['E_inh']] * self.N_inh
-                elif len([kwargs['E_inh']]) == self.N_inh:
-                    self.E_inh = kwargs['E_inh']
-                else:
-                    self.E_inh = [-80] * self.N_inh
-            else:
-                self.E_inh = [-80] * self.N_inh
-
-            # Time constant (ms)
-            if 'tau_i' in kwargs.keys():
-                if not isinstance(kwargs['tau_i'], list):
-                    self.tau_i = [kwargs['tau_i']] * self.N_inh
-                elif len([kwargs['tau_i']]) == self.N_inh:
-                    self.tau_i = kwargs['tau_i']
-                else:
-                    self.tau_i = [kwargs['tau_i']] * self.N_inh
-            else:
-                self.tau_i = [5] * self.N_inh
-
-            # Synaptic strength
-            if 'w_inh' in kwargs.keys():
-                if not isinstance(kwargs['w_inh'], list):
-                    self.w_inh = [kwargs['w_inh']]  * self.N_inh
-                elif len(kwargs['w_inh']) == self.N_inh:
-                    self.w_inh = [kwargs['w_inh']]
-                else:
-                    self.w_inh = [kwargs['w_inh']] * self.N_inh
-            else:
-                self.w_inh = [0.5] * self.N_inh
-        else:
-            self.N_inh = 0
-            self.w_inh = []
-            self.E_inh = []
-            self.tau_i = []
-
-    # Add synapses to neuron
-    def addSynapses(self,type,N,**kwargs):
+    # Add extra synapses to neuron
+    def add_synapses(self,type,N,**kwargs):
 
         if type == 'E':
 
             # Add synapses
             self.N_exc += N
+
 
             # Resting potential (mV)
             if 'E_exc' in kwargs.keys():
@@ -229,10 +137,9 @@ class Neuron:
                 self.w_inh = self.w_inh + [0.5] * N
 
             print('\n%s Inhibitory synapses were added'%N)
-        else:
-            print('\nWARNING: \nSynapses must be either \n\tE -> Excitatory\n\tI -> Inhibitory')
 
-        return 0
+        else:
+            sys.exit('\nWARNING: \nSynapses must be either \n\tE -> Excitatory\n\tI -> Inhibitory')
 
     # Differential equation for membrane potential
     def update_potential(self, V, input, **kwargs):
@@ -279,190 +186,123 @@ class Neuron:
         return -g / tau + w * t_stim[t]
 
     # Print parameters of neuron and synapses
-    def printNeuronInfo(self):
-        print('\n# ----------- NEURON PARAMETERS ----------- #')
-        print('Neuron Type                      : ', self.type)
-        print('Leak potential       (E_leak)    : ', self.E_leak    ,   ' mV ' )
-        print('Membrane resistance  (Rm)        : ', self.R_m       ,   ' MOhm ')
-        print('Initial potential    (V_init)    : ', self.V_init    ,   ' mV ')
-        print('Reset potential      (V_reset)   : ', self.V_reset   ,   ' mV ')
-        print('Threshold potential  (V_theta)   : ', self.V_theta   ,   ' mV ')
-        print('Spike potential      (V_spike)   : ', self.V_spike   ,   ' mV ')
+    def print_neuron_info(self):
 
-        print('\n# ----------- SYNAPSE PARAMETERS ----------- #')
-        print('Excitatory synapses  (N_exc) : ', self.N_exc)
-        print('Reversal potential   (E_exc) : ', self.E_exc, ' mV ')
-        print('Time constant        (tau_e) : ', self.tau_e, ' ms ')
-        print('Synaptic strength    (w_exc) : ', self.w_exc)
+        print(f"""
+# ----------- NEURON PARAMETERS ----------- #')
+Neuron Type                      :  {self.type}
+Leak potential       (E_leak)    :  {self.E_leak}    mV  
+Membrane resistance  (Rm)        :  {self.R_m}       MOhm 
+Initial potential    (V_init)    :  {self.V_init}    mV 
+Reset potential      (V_reset)   :  {self.V_reset}   mV 
+Threshold potential  (V_theta)   :  {self.V_theta}   mV 
+Spike potential      (V_spike)   :  {self.V_spike}   mV 
 
-        print('\nInhibitory synapses  (N_inh) : ', self.N_inh)
-        print('Reversal potential   (E_inh) : ', self.E_inh, ' mV ')
-        print('Time constant        (tau_i) : ', self.tau_i, ' ms ')
-        print('Synaptic strength    (w_inh) : ', self.w_inh)
+# ----------- SYNAPSE PARAMETERS ----------- #')
+Excitatory synapses  (N_exc) :  {self.N_exc}
+Reversal potential   (E_exc) :  {self.E_exc} mV
+Time constant        (tau_e) :  {self.tau_e} ms
+Synaptic strength    (w_exc) :  {self.w_exc}
 
-        return 0
+Inhibitory synapses  (N_inh) :  {self.N_inh}
+Reversal potential   (E_inh) :  {self.E_inh} mV
+Time constant        (tau_i) :  {self.tau_i} ms
+Synaptic strength    (w_inh) :  {self.w_inh}
+                """)
 
-
-# ------------------------------- INPUT ----------------------------------- #
+# ------------------------------- STIMULUS ----------------------------------- #
 
 class Stimulus:
-    def __init__(self,neuron,type,**kwargs):
 
-        self.type = type
-        self.parse_parameters(kwargs)
+    def __init__(self, neuron, stim_type, **kwargs):
 
-        # -------------------------- CONSTANT STIMULUS -------------------------- #
-        if type == 'constant':
+        # Parse parameters
+        self.__parse_parameters(kwargs)
 
-            if 'I_ext' in kwargs.keys():
-                if isinstance(kwargs['I_ext'],list):
-                    print('Constant current input can only take a single value')
-                else:
-                    self.I_ext = kwargs['I_ext']
-            else :
-                self.I_ext = 2.0
+        # Fixed parameters from input
+        self.type = stim_type
+        self.neuron = neuron
+        self.time = np.linspace(self.t_0, self.t_sim, int(self.t_sim / self.dt))
 
-        # -------------------------- PERIODIC STIMULUS -------------------------- #
-        elif type == 'periodic':
+        # Initialize constant stimulus
+        if self.type == StimulusType.CONSTANT.value:
+            self.__generate_constant_stimulus(kwargs)
 
-            # ......................... EXCITATORY STIMULI ......................... #
-            Ne = neuron.N_exc
-            rate = self.rate_exc
-            self.stim_exc = []
-            if isinstance(rate,list):
-                if len(rate) == Ne:
-                    for n in range(Ne):
-                        self.stim_exc.append(self.generate_periodic_stimulus(rate[n]))
-                elif len(rate) == 1:
-                    self.stim_exc = [self.generate_periodic_stimulus(rate[0])] * Ne
-                else:
-                    sys.exit('Error: if RATE_EXC is a LIST its length must be equal to N_EXC or equal to 1')
-            elif isinstance(rate,int):
-                self.stim_exc = [self.generate_periodic_stimulus(rate)] * Ne
-            else:
-                sys.exit("Error: RATE_EXC must be either INT or LIST")
-
-            # ......................... INHIBITORY STIMULI ......................... #
-            Ni = neuron.N_inh
-            rate = self.rate_inh
-            self.stim_inh = []
-            if isinstance(rate, list):
-                if len(rate) == Ni:
-                    for n in range(Ni):
-                        self.stim_inh.append(self.generate_periodic_stimulus(rate[n]))
-                elif len(rate) == 1:
-                    self.stim_inh = [self.generate_periodic_stimulus(rate[0])] * Ni
-                else:
-                    sys.exit('Error: if RATE_INH is a LIST its length must be equal to N_INH or 1')
-            elif isinstance(rate, int):
-                self.stim_inh = [self.generate_periodic_stimulus(rate)] * Ni
-            else:
-                sys.exit("Error: RATE_INH must be either INT or LIST")
-
-
-
-        # -------------------------- POISSON STIMULUS -------------------------- #
-        elif type == 'poisson':
-
-
-
-            # ......................... EXCITATORY STIMULI ......................... #
-            Ne = neuron.N_exc
-            rate = self.rate_exc
-            self.stim_exc = []
-            time = np.linspace(self.t_0, self.t_sim, int(self.t_sim / self.dt))
-
-            if isinstance(rate, list):
-                if len(rate) == Ne:
-                    for n in range(Ne):
-                        self.stim_exc.append([self.generate_poisson_stimulus(rate[n], time, self.dt) for n in rate])
-                elif len(rate) == 1:
-                    self.stim_exc = [self.generate_poisson_stimulus(rate[0], time, self.dt) for s in range(Ne)]
-                else:
-                    sys.exit('Error: if RATE_EXC is a LIST its length must be equal to N_EXC or equal to 1')
-            elif isinstance(rate, int):
-                self.stim_exc = [self.generate_poisson_stimulus(rate, time, self.dt) for s in range(Ne)]
-            else:
-                sys.exit("Error: RATE_EXC must be either INT or LIST")
-
-            # ......................... INHIBITORY STIMULI ......................... #
-            Ni = neuron.N_inh
-            rate = self.rate_inh
-            self.stim_inh = []
-            if isinstance(rate, list):
-                if len(rate) == Ni:
-                    for n in range(Ni):
-                        self.stim_inh.append([self.generate_poisson_stimulus(rate[m], time, self.dt) for m in rate])
-                elif len(rate) == 1:
-                    self.stim_inh = [self.generate_poisson_stimulus(rate[0], time, self.dt) for s in range(Ni)]
-                else:
-                    sys.exit('Error: if RATE_INH is a LIST its length must be equal to N_INH or 1')
-            elif isinstance(rate, int):
-                self.stim_inh = [self.generate_poisson_stimulus(rate, time, self.dt) for s in range(Ni)]
-            else:
-                sys.exit("Error: RATE_INH must be either INT or LIST")
-
-
-
-
+        # Initialize periodic stimulus
+        elif self.type == StimulusType.PERIODIC.value:
+            self.__create_stimuli('e')
+            self.__create_stimuli('i')
             self.I_ext = 0
 
-    def parse_parameters(self,arguments):
-
-
-        # Firing rate EXCITATORY (Hz)
-        if 'rate_exc' in arguments.keys():
-            self.rate_exc = arguments['rate_exc']
-        else:
-            self.rate_exc = 6
-
-        # Firing rate INHIBITORY (Hz)
-        if 'rate_inh' in arguments.keys():
-            self.rate_inh = arguments['rate_inh']
-        else:
-            self.rate_inh = 3
-
-        # Duration of each stimulus (ms)
-        if 'stim_length' in arguments.keys():
-            self.stim_length = arguments['stim_length']
-        else:
-            self.stim_length = 1
-
-        # Start time
-        if 't_0' in arguments.keys():
-            self.t_0 = arguments['t_0']
-        else:
-            self.t_0 = 1
-        self.t_0 = 0
-
-        # Simulation time (ms)
-        if 't_sim' in arguments.keys():
-            self.t_sim = arguments['t_sim']
-        else:
-            self.t_sim = 1000
-
-        # Time step (ms)
-        if 'dt' in arguments.keys():
-            self.dt = arguments['dt']
-        else:
-            self.dt = 0.1
-
-        # Input current (nA)
-        if 'I_ext' in arguments.keys():
-            self.I_ext = arguments['I_ext']
-        else:
+        # Initialize Poisson stimulus
+        elif self.type == StimulusType.POISSON.value:
+            self.__create_stimuli('e')
+            self.__create_stimuli('i')
             self.I_ext = 0
+        else:
+            sys.exit("Error: stimulus type must be either 'constant', 'periodic' or 'poisson' ")
 
-        return 0
+    def __parse_parameters(self, arguments):
 
-    def generate_poisson_stimulus(self, rate, time, dt):
-        stimulus = np.zeros(len(time))
-        for t in range(len(time)):
-            if rate * dt / 1000 > np.random.random():
-                stimulus[t:t+int(1/dt)] = 1 # add a 1 ms stimulus
-        return stimulus
+        defaultValues = dict(rate_exc = 6, rate_inh = 3, stim_length=1,t_0=0,t_sim=1000,dt=0.1,I_ext=2.0)
 
-    def generate_periodic_stimulus(self,rate):
+        for key, defVal in defaultValues.items():
+            setattr(self,key,arguments.get(key,defVal))
+
+    def __create_stimuli(self,syntype):
+
+        # Check synapse type
+        if syntype == 'e':
+            N = self.neuron.N_exc
+            rate = self.rate_exc
+            name = ['RATE_EXC', 'N_EXC']
+        elif syntype == 'i':
+            N = self.neuron.N_inh
+            rate = self.rate_inh
+            name = ['RATE_INH', 'N_INH']
+        else:
+            sys.exit('no buono')
+
+        # Create stimulus
+        stim = []
+        if isinstance(rate, list):
+            if len(rate) == N:
+                for n in range(N):
+                    if self.type == StimulusType.PERIODIC.value:
+                        stim.append(self.__generate_periodic_stimulus(rate[n]))
+                    else:
+                        stim.append([self.__generate_poisson_stimulus(rate[r], self.time, self.dt) for r in rate])
+            elif len(rate) == 1:
+                if self.type == StimulusType.PERIODIC.value:
+                    stim = [self.__generate_periodic_stimulus(rate[0])] * N
+                else:
+                    stim = [self.__generate_poisson_stimulus(rate[0], self.time, self.dt) for s in range(N)]
+            else:
+                sys.exit(f'Error: if {name[0]} is a LIST its length must be equal to {name[1]} or equal to 1')
+        elif isinstance(rate, int):
+            if self.type == StimulusType.PERIODIC.value:
+                stim = [self.__generate_periodic_stimulus(rate)] * N
+            else:
+                stim = [self.__generate_poisson_stimulus(rate, self.time, self.dt) for s in range(N)]
+        else:
+            sys.exit(f"Error: {name[0]} must be either INT or LIST")
+
+        # Assign stimulus to correct attribute
+        if syntype == 'e':
+            self.stim_exc = stim
+        elif syntype == 'i':
+            self.stim_inh = stim
+        else:
+            sys.exit('no buono')
+
+
+
+    def __generate_constant_stimulus(self, kwargs):
+        self.I_ext = kwargs.get('I_ext',2.0)
+        if isinstance(self.I_ext,list):
+            sys.exit('Constant current input can only take a single value')
+
+    def __generate_periodic_stimulus(self, rate):
         time = np.linspace(self.t_0,self.t_sim,int(self.t_sim/self.dt))
         stimulus = np.zeros(len(time))
 
@@ -503,8 +343,18 @@ class Stimulus:
 
         return stimulus
 
-    def getParams(self):
-        return self.dt
+    def __generate_poisson_stimulus(self, rate, time, dt):
+        stimulus = np.zeros(len(time))
+        for t in range(len(time)):
+            if rate * dt / 1000 > np.random.random():
+                stimulus[t:t+int(1/dt)] = 1 # add a 1 ms stimulus
+        return stimulus
+
+class StimulusType(Enum):
+    CONSTANT = 'constant'
+    PERIODIC = 'periodic'
+    POISSON = 'poisson'
+
 
 # ------------------------------- SIMULATION ----------------------------------- #
 
@@ -628,7 +478,10 @@ class Simulation:
         self.spikeTimes = spikeTimes
         self.firingRate = spikeCount/self.t_sim*1000
         self.ISI       = ISIs
-        self.CV         = np.std(self.ISI)/np.mean(self.ISI)
+        if len(self.ISI) > 1:
+            self.CV = np.std(self.ISI)/np.mean(self.ISI)
+        else:
+            self.CV = 0
 
 
     def runTrials(self,trials):
@@ -651,7 +504,7 @@ class Simulation:
             # Create new inputs with same parameters for each trials except 1st
             if trial != 0:
                 stim_args = vars(self.input)
-                self.input = Stimulus(neuron=self.neuron,**stim_args)
+                self.input = Stimulus(stim_type=self.input.type,**stim_args)
 
             # Run individual trial
             self.runSim()
@@ -741,35 +594,35 @@ class Simulation:
 
     def saveInputParameters(self,file):
         with open(file,'w') as f:
-            f.write('\n# ----------- NEURON PARAMETERS ----------- #')
-            f.write('\nNeuron Type=%s'%self.neuron.type)
-            f.write('\nE_leak    = %s # Leak reversal potential   (mV)'%self.neuron.E_leak)
-            f.write('\nRm        = %s # Membrane resistance       (Mohm)'%self.neuron.R_m)
-            f.write('\nV_init    = %s # Initial potential         (mV)'%self.neuron.V_init)
-            f.write('\nV_reset   = %s # Reset potential           (mV)'%self.neuron.V_reset)
-            f.write('\nV_theta   = %s # Threshold potential       (mV)'%self.neuron.V_theta)
-            f.write('\nV_spike   = %s # Spiking potential         (mV)'%self.neuron.V_spike)
+            f.write(f"""
+# ----------- NEURON PARAMETERS ----------- #')
+N_type  =  {self.neuron.type}
+E_leak  =  {self.neuron.E_leak}   # Leak potential        (mV)
+Rm      =  {self.neuron.R_m}      # Membrane resistance   (MOhm) 
+V_init  =  {self.neuron.V_init}   # Initial potential     (mV)
+V_reset =  {self.neuron.V_reset}  # Reset potential       (mV) 
+V_theta =  {self.neuron.V_theta}  # Threshold potential   (mV)
+V_spike =  {self.neuron.V_spike}  # Spike potential       (mV) 
 
-            f.write('\n\n# ----------- SYNAPSE PARAMETERS ----------- #')
-            f.write('\nN_exc = %s # Inhibitory synapses'%self.neuron.N_exc)
-            f.write('\nE_exc = %s # Reversal potential (mV)'%self.neuron.E_exc)
-            f.write('\ntau_e = %s # Time constant (ms)'%self.neuron.tau_e)
-            f.write('\nw_exc = %s # Synaptic strength '%self.neuron.w_exc)
-
-            f.write('\n\nN_inh = %s # Inhibitory synapses'%self.neuron.N_inh)
-            f.write('\nE_inh = %s # Reversal potential (mV)'%self.neuron.E_inh)
-            f.write('\ntau_i = %s # Time constant (ms)'%self.neuron.tau_i)
-            f.write('\nw_inh = %s # Synaptic strength'%self.neuron.w_inh)
-
-            f.write('\n\n# ----------- INPUT PARAMETERS ----------- #')
-            f.write('\nI_ext = %s # Input current (nA)' % self.input.I_ext)
-            f.write('\nrate_exc = %s # Excitatory rates' % self.input.rate_exc)
-            f.write('\nrate_inh = %s # Inhibitory rates' % self.input.rate_inh)
+# ----------- SYNAPSE PARAMETERS ----------- #')
+N_exc   =  {self.neuron.N_exc} # Excitatory synapses
+E_exc   =  {self.neuron.E_exc} # Reversal potential (mV)
+tau_e   =  {self.neuron.tau_e} # Time constant (ms)
+w_exc   =  {self.neuron.w_exc} # Synaptic strength
+N_inh   =  {self.neuron.N_inh} # Inhibitory synapses
+E_inh   =  {self.neuron.E_inh} # Reversal potential (mV)
+tau_i   =  {self.neuron.tau_i} # Time constant (ms)
+w_inh   =  {self.neuron.w_inh} # Synaptic strength
 
 
-            f.write('\n\n# ----------- SIMULATION PARAMETERS ----------- #')
-            f.write('\nt_0    = %s # Start simulation time (ms)' % self.t_0)
-            f.write('\nt_sim  = %s # Simulation duration (ms)' % self.t_sim)
-            f.write('\ndt     = %s # Integration time step (ms)'% self.dt)
+# ----------- INPUT PARAMETERS ----------- #
+I_ext   = {self.input.I_ext}    # Input current (nA) 
+rate_e  = {self.input.rate_exc} # Excitatory rates 
+rate_i  = {self.input.rate_inh} # Inhibitory rates  
 
 
+# ----------- SIMULATION PARAMETERS ----------- #
+t_0     = {self.t_0}    # Start simulation time (ms) 
+t_sim   = {self.t_sim}  # Simulation duration (ms)
+dt      = {self.dt}     # Integration time step (ms)
+""")

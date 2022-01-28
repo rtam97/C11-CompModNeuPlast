@@ -1,5 +1,5 @@
 from neurosim.neurosim import Neuron
-from neurosim.neurosim import Stimulus
+from neurosim.neurosim import Stimulus, StimulusType
 from neurosim.neurosim import Simulation
 from matplotlib import pyplot as plt
 
@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 lif = Neuron(type='LIF', N_exc=1, E_exc=0, tau_e=3, w_exc=0.5)
 
 # Generate periodic stimulus at 6 Hz
-stim = Stimulus(type='periodic',rate_exc=[6],
+stim = Stimulus(stim_type='periodic', rate_exc=[6],
                 t_sim=1000, neuron=lif)
 
 # Create simulation
@@ -41,7 +41,7 @@ for i,w in enumerate(W):
     lif = Neuron(type='LIF', N_exc=1, E_exc=0, tau_e=3, w_exc=w)
 
     # Generate periodic stimulus at 6 Hz
-    stim = Stimulus(type='periodic',rate_exc=[6],
+    stim = Stimulus(stim_type='periodic', rate_exc=[6],
                     t_sim=1000, neuron=lif)
     # Create simulation
     sim = Simulation(neuron=lif,stimulus=stim,t_sim=1000)
@@ -71,7 +71,7 @@ lif = Neuron(type='LIF',
              N_inh=1, w_inh=3.0)
 
 # Generate periodic stimulus at 6 Hz and 3 Hz
-stim = Stimulus(type='periodic',
+stim = Stimulus(stim_type='periodic',
                 rate_exc=6, rate_inh=3,
                 t_sim=1000, neuron=lif)
 

@@ -1,4 +1,4 @@
-from neurosim.neurosim import Neuron, Stimulus, Simulation
+from neurosim.neurosim import Neuron, Stimulus, StimulusType,Simulation
 from matplotlib import pyplot as plt
 import matplotlib as mlp
 
@@ -15,7 +15,7 @@ lif = Neuron(type="lif",
              N_inh=10, w_inh=0.5)
 
 # Create poisson stimulus
-stim = Stimulus(type='poisson', neuron=lif,
+stim = Stimulus(stim_type='poisson', neuron=lif,
                 rate_exc=10, rate_inh=10,
                 t_sim=10000, dt=0.1)
 
@@ -81,7 +81,7 @@ for i,w_e in enumerate(weights):
                  N_inh=10, w_inh=0.5)
 
     # Create poisson stimulus
-    stim = Stimulus(type='poisson', neuron=lif,
+    stim = Stimulus(stim_type=StimulusType.POISSON, neuron=lif,
                     rate_exc=10, rate_inh=10,
                     t_sim=10000, dt=0.1)
 
@@ -124,7 +124,7 @@ for i,w_e in enumerate(weights):
     # endregion
 
     # Save single-trial-plot for the current weight
-    # plt.savefig('../results/temp/weight%s.png'%(int(w_e*100)))
+    plt.savefig('../results/temp/weight%s.png'%(int(w_e*100)))
     # plt.show()
 
 
@@ -141,7 +141,7 @@ ax.set_xlabel('Excitatory synaptic weights')
 plt.legend(loc='upper left')
 
 # Line through the MAX(CV)
-BW = weights[np.where(CV==np.max(CV))[0][0]]
+BW = weights[np.where(CV==np.max(CV))[0]]
 plt.plot([BW]*100,np.linspace(np.min(CV)-0.05,np.max(CV)+0.05,100),'--',linewidth=3,color='tab:red')
 
 # Firing rate on same plot
@@ -154,5 +154,5 @@ ax2.set_xticks(weights)
 plt.legend(loc='upper right')
 
 plt.title('CV and Spikes given W_ex',fontweight='bold')
-# plt.savefig('results/exercise14_03.png')
+plt.savefig('results/temp/final_exercise14_03.png')
 plt.show()

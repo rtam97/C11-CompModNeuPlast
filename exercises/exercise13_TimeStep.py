@@ -5,7 +5,7 @@ import numpy as np
 
 lif = Neuron(type='LIF',N_exc=1,w_exc=3.0)
 
-stim = Stimulus(type='periodic',rate_exc=0,neuron=lif)
+stim = Stimulus(stim_type='periodic', rate_exc=0, neuron=lif)
 
 # Analytical solution
 t_end = 100
