@@ -6,7 +6,7 @@
 
 In this exercise I simulated a LIF neuron receiving constant current input.
 
-Increasing the current amplitude (from `I = 2.0 nA` to `I = 2.0 nA`) increases the firing rate of the neuron.
+Increasing the current amplitude (from `I = 2.0 nA` to `I = 4.0 nA`) increases the firing rate of the neuron.
 
 <p align="center">
 <img src="exercise11.png" alt="exercise 11" width="500"/>
@@ -15,15 +15,17 @@ Increasing the current amplitude (from `I = 2.0 nA` to `I = 2.0 nA`) increases t
 
 ### 1.2 Periodic synaptic inputs
 
-In the first part of this exercise, I first simulated a LIF neuron for `t = 1 s` receiving a single <ins>**excitatory**</ins> synaptic input arriving **_periodically_** with a frequency of `r = 5 Hz`.
+In the first part of this exercise, I simulated a LIF neuron for `t = 1 s` receiving a single <ins>**excitatory**</ins> synaptic input arriving **_periodically_** with a frequency of `r = 5 Hz`.
 
 The excitatory synaptic strength was first set to `We = 0.5`, which was not enough to reach the firing threshold in the neuron.
 
-Subsequently, the synaptic strength was increased to `We = 1.5` and to  `We = 3.0`. Only the latter was strong enough to elicit firing int the neuron.
+Subsequently, the synaptic strength was increased to `We = 1.5` and to  `We = 3.0`. Only the latter was strong enough to elicit firing in the neuron.
 
 <p align="center">
 <img src="exercise12_01.png" alt="excitatory-spiking" width="500"/>
 </p>
+
+--- 
 
 In the second part of the exercise, I added a second <ins>**inhibitory**</ins> synaptic input, arriving periodically with a frequency of `r = 3 Hz`.
 
@@ -47,7 +49,7 @@ In this exercise, I compute the *analytical solution* for the synaptic conductan
 As expected, smaller values of `dt` produce more accurate results.
 
 <p align="center">
-<img src="exercise13.png.png" alt="integration-time-step" width="500"/>
+<img src="exercise13.png" alt="integration-time-step" width="1000"/>
 </p>
 
 ### 1.4 Poisson spike trains
@@ -77,16 +79,16 @@ The inter-spike-intervals were indeed exponentially distributed, however the mea
 
 The average firing rate was found to be lower (`r = 3.4 Hz`) than the expected value (`r = 10/2 = 5 Hz`).
 
-<p align="center">
-<img src="exercise14_01.png" alt="equal weights" width="500"/>
-</p>
-
 These results suggest that the excitatory and inhibitory inputs are not balanced, with more weight given to inhibitory inputs. 
 This can be explained by the fact that, in this model, the inhibitory synaptic currents are slower to decay than the 
 excitatory ones, as indicted by their different time constants (`Ti = 5 ms > Te = 3 ms`). 
 
 This implies that, if the neuron receives an excitatory and inhibitory stimuli simultaneously, and both synaptic weights are equal,
 the inhibitory stimulus will have a greater (longer-lasting) effect on the overall evolution of the membrane potential.
+
+<p align="center">
+<img src="exercise14_01.png" alt="equal weights" width="500"/>
+</p>
 
 ___
 
@@ -97,11 +99,7 @@ A series of 10 simulations (50 trials x 10 s each) were run, in which the excita
 synapses was linearly increased from `We = 0.1` until `We = 1.0`, while the inhibitory synaptic weights were kept constant 
 for all inhibitory synapses (`Wi = 0.5`).
 
-<p align="center">
-<img src="exercise14_02.png" alt="equal weights" width="500"/>
-</p>
-
-As expected, the excitatory synaptic weight at which the highest balance was reached was slightly larger `We = 0.6` than 
+As expected, the excitatory synaptic weight at which the highest balance was reached was slightly larger (`We = 0.6`) than 
 the inhibitory one. 
 
 In such a configuration of synaptic weights, the firing rate of the neuron was equal to `r = 7.0 Hz` and the mean CV was
@@ -110,13 +108,16 @@ In such a configuration of synaptic weights, the firing rate of the neuron was e
  The fact that the firing rate is not exactly equal to `r = 5 Hz` is probably because the true optimal excitatory weight 
  actually sits between the two tested values: `0.5 < We_opt < 0.6`.
  
+ <p align="center">
+<img src="exercise14_02.png" alt="equal weights" width="500"/>
+</p>
  ___
  
  To test the previous hypothesis, 10 more simulations were performed, this time with the excitatory synaptic weight 
  increasing linearly between `We = 0.5` until `We = 0.6` in steps of `dw = 0.01`.
  
  As expected, the optimal synaptic weight was found to be `We = 0.55`, which caused the neuron to spike with a firing rate
- of `r = 4.9 Hz` and a distribution of ISI with a coefficient of variation equal to `CV = 0.910`, the closest to one achieved.
+ of `r = 4.9 Hz` and a distribution of ISI with a coefficient of variation equal to `CV = 0.910`, the largest one achieved.
  
  <p align="center">
 <img src="exercise14_03.png" alt="equal weights" width="500"/>
