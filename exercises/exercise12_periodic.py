@@ -14,6 +14,7 @@ lif = Neuron(type='LIF', N_exc=1, E_exc=0, tau_e=3, w_exc=0.5)
 # Generate periodic stimulus at 6 Hz
 stim = Stimulus(type='periodic',rate_exc=[6],
                 t_sim=1000, neuron=lif)
+
 # Create simulation
 sim = Simulation(neuron=lif,stimulus=stim,t_sim=1000)
 
@@ -92,7 +93,7 @@ plt.plot(sim.simtime,sim.g_exc[0],color='tab:green')
 plt.plot(sim.simtime,-sim.g_inh[0],color='tab:purple')
 plt.ylabel('Conductance (mS)')
 plt.xlabel('Time (ms)')
-plt.savefig('../results/exercise12_03.png')
+# plt.savefig('../results/exercise12_03.png')
 plt.show()
 
 

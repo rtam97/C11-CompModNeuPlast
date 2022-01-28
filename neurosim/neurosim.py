@@ -1,5 +1,7 @@
 import numpy as np
+from scipy.optimize import curve_fit
 from matplotlib import pyplot as plt
+from time import time as sw
 import sys
 
 
@@ -307,6 +309,7 @@ class Stimulus:
     def __init__(self,neuron,type,**kwargs):
 
         self.type = type
+        self.parse_parameters(kwargs)
 
         # -------------------------- CONSTANT STIMULUS -------------------------- #
         if type == 'constant':
@@ -322,64 +325,10 @@ class Stimulus:
         # -------------------------- PERIODIC STIMULUS -------------------------- #
         elif type == 'periodic':
 
-            # ......................... PARSE PARAMETERS ........................ #
-            # region parameters
-
-            # Firing rate EXCITATORY (Hz)
-            if 'rate_exc' in kwargs.keys():
-                self.rate_exc = kwargs['rate_exc']
-            else:
-                self.rate_exc = 6
-
-            # Firing rate INHIBITORY (Hz)
-            if 'rate_inh' in kwargs.keys():
-                self.rate_inh = kwargs['rate_inh']
-            else:
-                self.rate_inh = 3
-
-
-            # Duration of each stimulus (ms)
-            if 'stim_length' in kwargs.keys():
-                self.stim_length = kwargs['stim_length']
-            else:
-                self.stim_length = 1
-
-            # Start time
-            if 't_0' in kwargs.keys():
-                self.t_0 = kwargs['t_0']
-            else:
-                self.t_0 = 1
-            self.t_0 = 0
-
-            # Simulation time (ms)
-            if 't_sim' in kwargs.keys():
-                self.t_sim = kwargs['t_sim']
-            else:
-                self.t_sim = 1000
-
-            # Time step (ms)
-            if 'dt' in kwargs.keys():
-                self.dt = kwargs['dt']
-            else:
-                self.dt = 0.1
-
-            # Input current (nA)
-            if 'I_ext' in kwargs.keys():
-                self.I_ext = kwargs['I_ext']
-            else:
-                self.I_ext = 0
-
-            # endregion PARA
-
-            # ~~~~~~~~~~~~~~~~~~~~ CREATE STIMULI ~~~~~~~~~~~~~~~~~~~~ #
-            # region stimuli
-
-
             # ......................... EXCITATORY STIMULI ......................... #
             Ne = neuron.N_exc
             rate = self.rate_exc
             self.stim_exc = []
-
             if isinstance(rate,list):
                 if len(rate) == Ne:
                     for n in range(Ne):
@@ -397,7 +346,6 @@ class Stimulus:
             Ni = neuron.N_inh
             rate = self.rate_inh
             self.stim_inh = []
-
             if isinstance(rate, list):
                 if len(rate) == Ni:
                     for n in range(Ni):
@@ -411,11 +359,108 @@ class Stimulus:
             else:
                 sys.exit("Error: RATE_INH must be either INT or LIST")
 
-            # endregion
+
 
         # -------------------------- POISSON STIMULUS -------------------------- #
         elif type == 'poisson':
+
+
+
+            # ......................... EXCITATORY STIMULI ......................... #
+            Ne = neuron.N_exc
+            rate = self.rate_exc
+            self.stim_exc = []
+            time = np.linspace(self.t_0, self.t_sim, int(self.t_sim / self.dt))
+
+            if isinstance(rate, list):
+                if len(rate) == Ne:
+                    for n in range(Ne):
+                        self.stim_exc.append([self.generate_poisson_stimulus(rate[n], time, self.dt) for n in rate])
+                elif len(rate) == 1:
+                    self.stim_exc = [self.generate_poisson_stimulus(rate[0], time, self.dt) for s in range(Ne)]
+                else:
+                    sys.exit('Error: if RATE_EXC is a LIST its length must be equal to N_EXC or equal to 1')
+            elif isinstance(rate, int):
+                self.stim_exc = [self.generate_poisson_stimulus(rate, time, self.dt) for s in range(Ne)]
+            else:
+                sys.exit("Error: RATE_EXC must be either INT or LIST")
+
+            # ......................... INHIBITORY STIMULI ......................... #
+            Ni = neuron.N_inh
+            rate = self.rate_inh
+            self.stim_inh = []
+            if isinstance(rate, list):
+                if len(rate) == Ni:
+                    for n in range(Ni):
+                        self.stim_inh.append([self.generate_poisson_stimulus(rate[m], time, self.dt) for m in rate])
+                elif len(rate) == 1:
+                    self.stim_inh = [self.generate_poisson_stimulus(rate[0], time, self.dt) for s in range(Ni)]
+                else:
+                    sys.exit('Error: if RATE_INH is a LIST its length must be equal to N_INH or 1')
+            elif isinstance(rate, int):
+                self.stim_inh = [self.generate_poisson_stimulus(rate, time, self.dt) for s in range(Ni)]
+            else:
+                sys.exit("Error: RATE_INH must be either INT or LIST")
+
+
+
+
             self.I_ext = 0
+
+    def parse_parameters(self,arguments):
+
+
+        # Firing rate EXCITATORY (Hz)
+        if 'rate_exc' in arguments.keys():
+            self.rate_exc = arguments['rate_exc']
+        else:
+            self.rate_exc = 6
+
+        # Firing rate INHIBITORY (Hz)
+        if 'rate_inh' in arguments.keys():
+            self.rate_inh = arguments['rate_inh']
+        else:
+            self.rate_inh = 3
+
+        # Duration of each stimulus (ms)
+        if 'stim_length' in arguments.keys():
+            self.stim_length = arguments['stim_length']
+        else:
+            self.stim_length = 1
+
+        # Start time
+        if 't_0' in arguments.keys():
+            self.t_0 = arguments['t_0']
+        else:
+            self.t_0 = 1
+        self.t_0 = 0
+
+        # Simulation time (ms)
+        if 't_sim' in arguments.keys():
+            self.t_sim = arguments['t_sim']
+        else:
+            self.t_sim = 1000
+
+        # Time step (ms)
+        if 'dt' in arguments.keys():
+            self.dt = arguments['dt']
+        else:
+            self.dt = 0.1
+
+        # Input current (nA)
+        if 'I_ext' in arguments.keys():
+            self.I_ext = arguments['I_ext']
+        else:
+            self.I_ext = 0
+
+        return 0
+
+    def generate_poisson_stimulus(self, rate, time, dt):
+        stimulus = np.zeros(len(time))
+        for t in range(len(time)):
+            if rate * dt / 1000 > np.random.random():
+                stimulus[t:t+int(1/dt)] = 1 # add a 1 ms stimulus
+        return stimulus
 
     def generate_periodic_stimulus(self,rate):
         time = np.linspace(self.t_0,self.t_sim,int(self.t_sim/self.dt))
@@ -458,6 +503,8 @@ class Stimulus:
 
         return stimulus
 
+    def getParams(self):
+        return self.dt
 
 # ------------------------------- SIMULATION ----------------------------------- #
 
@@ -488,6 +535,7 @@ class Simulation:
         else:
             self.dt = 0.1
 
+        self.trials = int(kwargs.get('trials', 1))
 
         if self.input.type != 'constant' and self.t_0 != self.input.t_0 and self.t_sim != self.input.t_sim and self.dt != self.input.dt:
             sys.exit('Error: the stimulus time and simulation time do not match!')
@@ -508,9 +556,30 @@ class Simulation:
         self.spikeCount = 0
         self.spikeTimes = []
         self.firingRate = 0
+        self.ISI       = []
+        self.CV         = []
+        self.meanISI    = 0
+        self.meanCV     = 0
+        self.meanSpikes = 0
 
 
-    def simulate(self):
+    def simulate(self,**kwargs):
+        self.trials = int(kwargs.get('trials',1))
+
+        if self.trials == 1:
+            self.runSim()
+        elif self.trials > 1:
+            self.runTrials(self.trials)
+        else:
+            sys.exit('You cannot simulate 0 or -Int trials')
+
+
+    def runSim(self):
+        """
+        Run a single trial simulation
+        :return:
+        """
+
         # Define voltage vector
         V = self.potential
         g_ex = self.g_exc
@@ -518,6 +587,7 @@ class Simulation:
         V[0] = self.neuron.V_init
         spikeCount = 0
         spikeTimes = []
+        ISIs       = []
 
         # Integration loop
         for t in range(len(self.simtime) - 1):
@@ -543,6 +613,10 @@ class Simulation:
                 V[t + 1] = self.neuron.V_spike
                 spikeCount += 1
                 spikeTimes.append(self.simtime[t])
+                if not ISIs:
+                    ISIs.append(round(self.simtime[t],1))
+                else:
+                    ISIs.append(round(self.simtime[t]-spikeTimes[-2],1))
             else:
                 V[t + 1] = self.neuron.V_reset
 
@@ -553,6 +627,116 @@ class Simulation:
         self.spikeCount = spikeCount
         self.spikeTimes = spikeTimes
         self.firingRate = spikeCount/self.t_sim*1000
+        self.ISI       = ISIs
+        self.CV         = np.std(self.ISI)/np.mean(self.ISI)
+
+
+    def runTrials(self,trials):
+        """
+        Run a multi-trial simulation and compute statistics
+        :return:
+        """
+
+        ISI = []
+        CV = []
+        SC = []
+        FR = []
+        potentials = []
+
+        for trial in range(trials):
+
+            if np.mod(trial,1) == 0:
+                print('%s / %s '%(trial+1,trials))
+
+            # Create new inputs with same parameters for each trials except 1st
+            if trial != 0:
+                stim_args = vars(self.input)
+                self.input = Stimulus(neuron=self.neuron,**stim_args)
+
+            # Run individual trial
+            self.runSim()
+
+            # store ISI, CV and spike-count from trial
+            ISI.append(self.ISI)
+            CV.append(self.CV)
+            SC.append(self.spikeCount)
+            FR.append(self.firingRate)
+            potentials.append(self.potential)
+
+        self.potential = potentials
+        self.ISI = np.concatenate(ISI)
+        self.CV = np.array(CV)
+        tmp = self.CV[~np.isnan(self.CV)]
+        self.CV = tmp[tmp != 0.0]
+        self.spikeCount = np.array(SC)
+        self.firingRate = FR
+        self.meanCV = np.mean(self.CV)
+        self.meanISI = np.mean(self.ISI)
+        self.meanSpikes = np.round(np.mean(self.spikeCount))
+        self.meanFR     = np.round(np.mean(self.firingRate),1)
+
+    def plotISIdist(self,**kwargs):
+        show = kwargs.get('show',False)
+        expfit = kwargs.get('expfit',True)
+
+        beans = 20
+
+        plt.hist(self.ISI, fill=0, label='ISI',bins=beans)
+
+        if expfit:
+            def exp(x, a, b, c):
+                return a * np.exp(-b * x) + c
+            binval = np.histogram(self.ISI, bins=beans)[0]
+            xval = np.linspace(0, np.max(self.ISI), beans)
+            popt, pcov = curve_fit(exp, xval, binval, [1.0, 0.0, 1.0])
+            plt.plot(xval, exp(xval, *popt), 'r-', label='exp.fit')
+
+        plt.legend(loc='upper right')
+        plt.xlabel('ISI')
+        plt.ylabel('Frequency')
+        plt.title('Mean ISI: %s ms' % np.round(self.meanISI, 1), fontweight='bold')
+
+        if show:
+            plt.show()
+
+    def plotCVdist(self):
+        if self.trials > 1 :
+            plt.hist(self.CV, fill=0,bins=5)
+            plt.xlabel('Coefficient of Variation (CV)')
+            plt.title('Mean CV: %s ' % np.round(self.meanCV, 3), fontweight='bold')
+        else:
+            Warning('Cannot plot CV out of a single trial')
+
+    def plotVoltageTrace(self,**kwargs):
+        fulltrace = kwargs.get('fulltrace',False)
+
+        if 'label' in kwargs.keys():
+            if not fulltrace:
+                if len(self.potential) == len(self.simtime):
+                    plt.plot(self.simtime/1000, self.potential, label=kwargs['label'])
+                else:
+                    plt.plot(self.simtime / 1000, self.potential[-1], label=kwargs['label'])
+            else:
+                plt.plot(np.linspace(self.t_0,self.t_sim*self.trials,int(self.t_sim/self.dt))/1000,
+                         np.concatenate(self.potential),
+                         label=kwargs['label'])
+            plt.legend(loc='upper left', fontsize='small')
+        else:
+            if not fulltrace:
+                if len(self.potential) == len(self.simtime):
+                    plt.plot(self.simtime / 1000, self.potential)
+                else:
+                    plt.plot(self.simtime / 1000, self.potential[-1])
+            else:
+                plt.plot(np.linspace(self.t_0, self.t_sim * self.trials, int(self.t_sim* self.trials / self.dt))/1000,
+                         np.concatenate(self.potential))
+
+        plt.xlabel('Time (s)')
+        plt.ylabel('Membrane potential (mV)')
+        if 'show' in kwargs.keys():
+            if kwargs['show']:
+                plt.show()
+        return plt
 
 
     def saveInputParameters(self,file):
@@ -578,26 +762,14 @@ class Simulation:
             f.write('\nw_inh = %s # Synaptic strength'%self.neuron.w_inh)
 
             f.write('\n\n# ----------- INPUT PARAMETERS ----------- #')
-            f.write('\nI_ext = %s # Input current (nA)'%self.input.I_ext)
+            f.write('\nI_ext = %s # Input current (nA)' % self.input.I_ext)
+            f.write('\nrate_exc = %s # Excitatory rates' % self.input.rate_exc)
+            f.write('\nrate_inh = %s # Inhibitory rates' % self.input.rate_inh)
+
 
             f.write('\n\n# ----------- SIMULATION PARAMETERS ----------- #')
             f.write('\nt_0    = %s # Start simulation time (ms)' % self.t_0)
             f.write('\nt_sim  = %s # Simulation duration (ms)' % self.t_sim)
             f.write('\ndt     = %s # Integration time step (ms)'% self.dt)
-
-    def plotVoltageTrace(self,**kwargs):
-        if 'label' in kwargs.keys():
-            plt.plot(self.simtime, self.potential, label=kwargs['label'])
-            plt.legend(loc='upper left',fontsize='small')
-        else:
-            plt.plot(self.simtime, self.potential)
-
-        plt.xlabel('Time (ms)')
-        plt.ylabel('Membrane potential (mV)')
-        if 'show' in kwargs.keys():
-            if kwargs['show']:
-                plt.show()
-        return plt
-
 
 

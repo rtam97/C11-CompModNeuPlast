@@ -55,6 +55,6 @@ plt.text(1+0.9,sim2.firingRate-5,sim2.firingRate,color='tab:orange')
 plt.xticks([1,2],[2.0,4.0])
 plt.xlabel("Injected Current (nA)")
 plt.ylabel("Firing Rate (Hz)")
-plt.savefig('../results/exercise11.png')
+# plt.savefig('../results/exercise11.png')
 plt.show()
 
