@@ -12,15 +12,12 @@ This repository contains the code and the results of the simulations ran as part
 
 Supervisor: [Prof. Dr. Jochen Triesch](https://www.fias.science/en/neuroscience/research-groups/jochen-triesch/)
 
-⚠️ As of 26/01/2022 I have rewritten the entire code so that it is object-oriented. Much easier to run simulations now! ⚠️
-
-
 
 # Contents of the repository
 
 ## 📂 neurosim
 
-In this directory there is a single file `neurosim.py` which contains all the classes needed to run a simulation
+In this directory there is a single file `neurosim.py` which contains all the classes needed to run the exercises
 
 ## 📂 exercises
 
