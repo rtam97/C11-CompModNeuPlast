@@ -37,11 +37,11 @@ The process of simulating neurons is achieved in 4 steps:
 1. **Generation of a neuron** with the desired properties, using the `Neuron` class
 2. **Generation of a stimulus** to be applied to the neuron, using the `Stimulus` class
 3. **Generation of a simulation** object, with all the parameters needed to run it, using the `Simulation` class
-4. **Run the simulation** with the given parameters
+4. **Running the simulation** with the given parameters
 
 ## Usage
 
-Here is an example for simulating a simple LIF neuron with constant current input
+### Here is an example for simulating a simple LIF neuron with constant current input
 
 First, the right classes are imported
 
