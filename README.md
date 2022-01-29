@@ -27,6 +27,9 @@ In this directory are all the scripts used to generate the figures for the exerc
 
 In this directory are all the figures generated with the scripts in the folder exercises
 
+# 
+
+#
 
 # How to use `neurosim`
 
@@ -35,7 +38,6 @@ The process of simulating neurons is achieved in 4 steps:
 2. **Generation of a stimulus** to be applied to the neuron, using the `Stimulus` class
 3. **Generation of a simulation** object, with all the parameters needed to run it, using the `Simulation` class
 4. **Run the simulation** with the given parameters
-
 
 ## Usage
 
@@ -98,4 +100,7 @@ sim.plotVoltageTrace(show=True)
 
 ```
 
+<p align="center"> 
+<img src="results/00_tutorial.png" alt="equal weights" width="700"/>
+</p>
 

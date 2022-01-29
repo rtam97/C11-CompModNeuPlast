@@ -684,6 +684,50 @@ class Simulation:
                 plt.show()
         return plt
 
+    def print_sim_parameters(self):
+        print(f"""
+# ----------- NEURON PARAMETERS ----------- #')
+N_type  =  {self.neuron.type}
+E_leak  =  {self.neuron.E_leak}   # Leak potential        (mV)
+Rm      =  {self.neuron.R_m}      # Membrane resistance   (MOhm) 
+V_init  =  {self.neuron.V_init}   # Initial potential     (mV)
+V_reset =  {self.neuron.V_reset}  # Reset potential       (mV) 
+V_theta =  {self.neuron.V_theta}  # Threshold potential   (mV)
+V_spike =  {self.neuron.V_spike}  # Spike potential       (mV) 
+
+# ----------- SYNAPSE PARAMETERS ----------- #')
+N_exc   =  {self.neuron.N_exc} # Excitatory synapses
+E_exc   =  {self.neuron.E_exc} # Reversal potential (mV)
+tau_e   =  {self.neuron.tau_e} # Time constant (ms)
+w_exc   =  {self.neuron.w_exc} # Synaptic strength
+N_inh   =  {self.neuron.N_inh} # Inhibitory synapses
+E_inh   =  {self.neuron.E_inh} # Reversal potential (mV)
+tau_i   =  {self.neuron.tau_i} # Time constant (ms)
+w_inh   =  {self.neuron.w_inh} # Synaptic strength
+
+
+# ----------- INPUT PARAMETERS ----------- #
+I_ext   = {self.input.I_ext}    # Input current (nA) 
+rate_e  = {self.input.rate_exc} # Excitatory rates 
+rate_i  = {self.input.rate_inh} # Inhibitory rates  
+
+
+# ----------- SIMULATION PARAMETERS ----------- #
+t_0     = {self.t_0}    # Start simulation time (ms) 
+t_sim   = {self.t_sim}  # Simulation duration (ms)
+dt      = {self.dt}     # Integration time step (ms)
+""")
+
+    def print_sim_stats(self):
+        print(f"""
+# ----------- SIMULATION STATS ----------- #')
+Number of spikes    =  {self.spikeCount}
+Firing rate         =  {self.firingRate} Hz
+Average ISI         =  {self.meanISI} ms 
+CV                  =  {self.CV}  
+""")
+
+
     def saveInputParameters(self,file):
         with open(file,'w') as f:
             f.write(f"""
