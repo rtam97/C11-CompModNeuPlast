@@ -19,9 +19,6 @@ sim1 = Simulation(neuron=lif,stimulus=stim1,t_sim=100)
 # Run simulation
 sim1.simulate()
 
-# Save parameters used for simulation
-sim1.saveInputParameters('param1.txt')
-
 # --------------------- CONSTANT CURRENT : 4.0 nA ---------------------
 
 # Create a constant stimulus with current 2.0 nA
@@ -32,9 +29,6 @@ sim2 = Simulation(neuron=lif,stimulus=stim2,t_sim=100)
 
 # Run simulation
 sim2.simulate()
-
-# save parameters used for simulation
-sim2.saveInputParameters('param2.txt')
 
 # --------------------- PLOT ---------------------
 

@@ -1,5 +1,5 @@
 from neurosim.neurosim import Neuron
-from neurosim.neurosim import Stimulus, StimulusType
+from neurosim.neurosim import Stimulus
 from neurosim.neurosim import Simulation
 from matplotlib import pyplot as plt
 
