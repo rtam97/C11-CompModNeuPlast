@@ -156,7 +156,7 @@ regular, as indicated by the average CV being smaller (`CV = 0.656`), by the ISI
 in the RP-free case, and by the firing rate being smaller (`r = 3.4 Hz`) than the one expected (`r_exp = 5 Hz`).
 
 <p align="center"> 
-<img src="exercise22.png" alt="equal weights" width="500"/>
+<img src="exercise22.png" alt="equal weights" width="700"/>
 </p>
 
 
