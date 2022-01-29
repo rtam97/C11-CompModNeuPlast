@@ -138,6 +138,27 @@ This is even more obvious in the **third** graph, in which the same neuron **wit
 <img src="exercise21_03.png" alt="equal weights" width="300"/>
 </p>
 
+## 2.1 Spike-Rate Adaptation
+
+In this exercise, I implemented a mechanism which models the refractory period (RP) observed in pyramidal neurons. The same 
+differential equation as the one used to describe the SRA conductance governs the evolution of the RP conductance, although
+the parameters are now different: `E_rp = -70` , `tau_rp = 50` , and `dg_rp = 1.2`.
+
+The refractory period was added to a LIF neuron receiving 10 excitatory and 10 inhibitory synaptic inputs, in the same 
+configuration as the one described in [Exercise 1.4](#14-poisson-spike-trains). The synaptic weights were adjusted so that,
+in absence of RP, the excitatory and inhibitory inputs would be perfectly balanced (`We = 0.55` and `Wi = 0.50`).
+
+The neuron was simulated for 50 trials of 10 seconds each, the ISI were determined, and their CV was computed. 
+
+The distributions of both ISI and CV are plotted in the graph below. If compared to the result from Exercise 1.4 with the 
+same synaptic weights, it can be clearly seen that, after addition of the refractory period, the spiking becomes a lot more
+regular, as indicated by the average CV being smaller (`CV = 0.656`), by the ISI distribution which looks less exponential than
+in the RP-free case, and by the firing rate being smaller (`r = 3.4 Hz`) than the one expected (`r_exp = 5 Hz`).
+
+<p align="center"> 
+<img src="exercise22.png" alt="equal weights" width="500"/>
+</p>
+
 
 # Chapter 3
 

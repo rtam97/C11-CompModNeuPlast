@@ -55,7 +55,3 @@ plt.suptitle('Spike Rate adaptation : dg_SRA = %s '%dg_sra,fontweight='bold')
 
 
 plt.show()
-
-print(sim.outputFreq)
-
-print(1)

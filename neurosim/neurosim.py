@@ -42,6 +42,11 @@ class Neuron:
         self.E_k = kwargs.get('E_k', -70)
         self.tau_s = kwargs.get('tau_s', 100)
 
+        # Refractory period
+        self.ref = kwargs.get('ref',0)
+        self.E_rp = kwargs.get('E_rp',-70)
+        self.tau_rp = kwargs.get('tau_rp',50)
+
         synaptic_args = ['E_exc' , 'w_exc', 'tau_e', 'E_inh', 'w_inh', 'tau_i']
 
         # Iterate through default values
@@ -184,14 +189,22 @@ class Neuron:
         else:
             I_inh = 0
 
+        # Spike-rate adaptation
         if 'g_sra' in kwargs.keys():
             g_sra = kwargs['g_sra']
             I_sra = g_sra * (self.E_k - V)
         else:
             I_sra = 0
 
+        # Refractory period
+        if 'g_ref' in kwargs.keys():
+            g_ref = kwargs['g_ref']
+            I_ref = g_ref * (self.E_rp - V)
+        else:
+            I_ref = 0
+
         # Voltage update
-        return (self.E_leak - V + I_ext + I_exc + I_inh + I_sra)/self.tau_m
+        return (self.E_leak - V + I_ext + I_exc + I_inh + I_sra + I_ref)/self.tau_m
 
     # Differential equation for synaptic conductance
     def synapse(self,sType,g,t,stim,n):
@@ -209,10 +222,18 @@ class Neuron:
 
         return -g / tau + w * t_stim[t]
 
-    def spike_rate_adaptation(self,g_sra,spike):
-        tau_s = self.tau_s
-        dg_sra = self.sra
-        return -g_sra/tau_s + dg_sra*spike
+
+    def adaptation(self,adapt_type,g,spike):
+        tau = 1
+        dg = 0
+        if adapt_type == 'SRA':
+            tau = self.tau_s
+            dg = self.sra
+        elif adapt_type == 'RP':
+            tau = self.tau_rp
+            dg = self.ref
+
+        return -g/tau + dg*spike
 
     # Print parameters of neuron and synapses
     def print_neuron_info(self):
@@ -446,6 +467,9 @@ class Simulation:
         # Empty SRA conductance vector
         self.g_sra = np.zeros(len(self.simtime))
 
+        # Empty Refractory Period conductance vector
+        self.g_ref = np.zeros(len(self.simtime))
+
         # Empty counters
         self.spikeCount = 0
         self.spikeTimes = []
@@ -462,14 +486,14 @@ class Simulation:
         self.trials = int(kwargs.get('trials',1))
 
         if self.trials == 1:
-            self.runSim()
+            self.__runSim()
         elif self.trials > 1:
-            self.runTrials(self.trials)
+            self.__runTrials(self.trials)
         else:
             sys.exit('You cannot simulate 0 or -Int trials')
 
 
-    def runSim(self):
+    def __runSim(self):
         """
         Run a single trial simulation
         :return:
@@ -480,11 +504,13 @@ class Simulation:
         g_ex = self.g_exc
         g_in = self.g_inh
         g_sra = self.g_sra
+        g_ref = self.g_ref
         V[0] = self.neuron.V_init
         spikeCount = 0
         spikeTimes = []
         ISIs       = []
         sra_end     = 0
+        spike = False
 
         # Integration loop
         for t in range(len(self.simtime) - 1):
@@ -505,10 +531,16 @@ class Simulation:
 
             # Update POTENTIAL and spike/reset
             if V[t] <= self.neuron.V_theta:
-                V[t + 1] = V[t] + self.dt * self.neuron.update_potential(V[t], self.input, g_exc=g_ex[:,t+1], g_inh = g_in[:,t+1],g_sra=g_sra[t],time=t)
+                V[t + 1] = V[t] + self.dt * self.neuron.update_potential(V[t], self.input, time=t,
+                                                                             g_exc=g_ex[:, t + 1], g_inh =g_in[:, t + 1],
+                                                                             g_sra=g_sra[t], g_ref=g_ref[t])
             elif V[t] != self.neuron.V_spike:
                 spike = True
-                sra_end = self.simtime[t+int(1/self.dt)]
+                try:
+                    sra_end = self.simtime[t+int(1/self.dt)]
+                except Exception as e:
+                    sra_end = self.simtime[-1]
+
                 V[t + 1] = self.neuron.V_spike
                 spikeCount += 1
                 spikeTimes.append(self.simtime[t])
@@ -522,13 +554,12 @@ class Simulation:
             if self.simtime[t] == sra_end:
                 spike = False
 
-            # Update SRA conductance (will have an effect only on next time-point)
-            if len(spikeTimes) > 0:
-                g_sra[t+1] = g_sra[t] + self.dt * self.neuron.spike_rate_adaptation(g_sra[t],spike)
-            else:
-                g_sra[t+1] = g_sra[t] + self.dt * self.neuron.spike_rate_adaptation(g_sra[t],spike)
+            # Update SRA conductance and Refractory Period Conductance
+            g_sra[t+1] = g_sra[t] + self.dt * self.neuron.adaptation('SRA',g_sra[t],spike)
+            g_ref[t+1] = g_ref[t] + self.dt * self.neuron.adaptation('RP',g_ref[t], spike)
 
-        # Save simulation old_results
+
+        # Save simulation results
         self.potential = V
         self.g_exc = g_ex
         self.g_inh = g_in
@@ -538,14 +569,15 @@ class Simulation:
         self.firingRate = spikeCount/self.t_sim*1000
         self.ISI       = ISIs
         self.outputFreq = (1/np.array(self.ISI))*1000 # Hz
-        self.outputFreq[0] = 1/(spikeTimes[0]-self.simtime[int(self.input.stim_start/self.dt)])*1000
+        if spikeTimes:
+            self.outputFreq[0] = 1/(spikeTimes[0]-self.simtime[int(self.input.stim_start/self.dt)])*1000
         if len(self.ISI) > 1:
             self.CV = np.std(self.ISI)/np.mean(self.ISI)
         else:
             self.CV = 0
 
 
-    def runTrials(self,trials):
+    def __runTrials(self, trials):
         """
         Run a multi-trial simulation and compute statistics
         :return:
@@ -568,7 +600,7 @@ class Simulation:
                 self.input = Stimulus(stim_type=self.input.type,**stim_args)
 
             # Run individual trial
-            self.runSim()
+            self.__runSim()
 
             # store ISI, CV and spike-count from trial
             ISI.append(self.ISI)
@@ -651,7 +683,6 @@ class Simulation:
             if kwargs['show']:
                 plt.show()
         return plt
-
 
     def saveInputParameters(self,file):
         with open(file,'w') as f:
