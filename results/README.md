@@ -113,9 +113,9 @@ In such a configuration of synaptic weights, the firing rate of the neuron was e
  As expected, the optimal synaptic weight was found to be `We = 0.55`, which caused the neuron to spike with a firing rate
  of `r = 4.9 Hz` and a distribution of ISI with a coefficient of variation equal to `CV = 0.910`, the largest one achieved.
  
- <p align="center">
-<img src="exercise14_03.png" alt="equal weights" width="400"/>
-<img src="exercise14_04.png" alt="equal weights" width="400"/>
+ <p align="center" id="balanced-weights">
+<img src="exercise14_03.png" alt="balanced weights" width="400"/>
+<img src="exercise14_04.png" alt="balanced weights" width="400"/>
 </p>
 
 
@@ -151,7 +151,7 @@ in absence of RP, the excitatory and inhibitory inputs would be perfectly balanc
 The neuron was simulated for 50 trials of 10 seconds each, the ISI were determined, and their CV was computed. 
 
 The distributions of both ISI and CV are plotted in the graph below. If compared to the result from Exercise 1.4 with the 
-same synaptic weights, it can be clearly seen that, after addition of the refractory period, the spiking becomes a lot more
+same [synaptic weights](#balanced-weights), it can be clearly seen that, after addition of the refractory period, the spiking becomes a lot more
 regular, as indicated by the average CV being smaller (`CV = 0.656`), by the ISI distribution which looks less exponential than
 in the RP-free case, and by the firing rate being smaller (`r = 3.4 Hz`) than the one expected (`r_exp = 5 Hz`).
 
