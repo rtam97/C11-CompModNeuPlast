@@ -123,3 +123,6 @@ sim.plotVoltageTrace(show=True)
 <img src="results/00_tutorial.png" alt="equal weights" width="700"/>
 </p>
 
+
+For further examples on how to simulate different kinds of neurons, inputs, and plasticity rules, check out the scripts
+in the [Exercises](https://github.com/rtam97/C11-CompModNeuPlast/tree/main/exercises) directory. 
