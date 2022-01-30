@@ -17,15 +17,34 @@ Supervisor: [Prof. Dr. Jochen Triesch](https://www.fias.science/en/neuroscience/
 
 ## 📂 neurosim
 
-In this directory there is a single file `neurosim.py` which contains all the classes needed to run the exercises
+In this directory there is a single file [`neurosim.py`](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/neurosim/neurosim.py) 
+which contains all the classes needed to run the exercises.
 
 ## 📂 exercises
 
-In this directory are all the scripts used to generate the figures for the exercises
+In this directory are all the scripts used to generate the figures for the exercises:
+
+[1.1 Leaky Integrate and Fire](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/exercises/exercise11_LIF.py)
+
+[1.2 Periodic Synaptic Inputs](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/exercises/exercise12_periodic.py)
+
+[1.3 Integration Time Step](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/exercises/exercise13_TimeStep.py)
+
+[1.4 Poisson Spike Trains](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/exercises/exercise14_poisson.py)
+
+[2.1 Spike Rate Adaptation](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/exercises/exercise21_sra.py)
+
+[2.2 Refractory Period](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/exercises/exercise22_refractory.py)
+
+...
+
+And many more to come!
+
+...
 
 ## 📂 results
 
-In this directory are all the figures generated with the scripts in the folder exercises
+In this directory are all the figures generated with the scripts in the folder exercises.
 
 # 
 
