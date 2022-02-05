@@ -7,9 +7,7 @@ lif_stdp = Neuron(type='lif',
                     w_exc=1.0,
                     stdp = True,
                     A_ltp=0.1, tau_ltp=17,
-                    A_ltd=-0.05, tau_ltd=34,
-                    sra=0.06,
-                    ref=1.2)
+                    A_ltd=-0.05, tau_ltd=34)
 
 # Stimuli
 rates = [8,5]
