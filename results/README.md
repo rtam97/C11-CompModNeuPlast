@@ -164,27 +164,34 @@ in the RP-free case, and by the firing rate being smaller (`r = 3.4 Hz`) than th
 
 ## 3.1 Spike-Timing Dependent Plasticity
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
-Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. 
-Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+In this exercise I implemented a mechanism for Spike-Timing Dependent Plasticity (STDP, in which the weight of each synaptic input was governed by the following differential equation:
+
+`dw[t]/dt  = A_ltp*X[t]*d[t-t_pre] + A_ltd*Y[t]*d[t-t_post]`
+
+where `X[t]` and `Y[t]` are the spike traces for the pre- and post-synaptic neurons, respectively, as described in [Morrison et al., 2008](https://doi.org/10.1007/s00422-008-0233-1), and `d[*]` is the Dirac's delta function. 
+
+STDP was added to a traditional LIF neuron, receiving `N_exc = 2` excitatory synapses and no inhibitory ones. The two excitatory synapses had equal initial weights (`w_exc = 1.0`). The LTP amplitude was set to `A_ltp = 0.1` and the LTD amplitude was set to `A_ltd = -0.05`. Time constants for LTP and LTD were set to `tau_ltp = 17 ms` and `tau_ltd = 34 ms`.
+
+The neuron was simulated for `t_sim = 15` seconds, while receiving poisson distributed inputs from both pre-synaptic neurons, with expected firing rate `rate_exc = 5 Hz` for both.
+
 
 <p align="center"> 
-<img src="exercise31_01.png" alt="equal weights" width="400"/>
-<img src="exercise31_02.png" alt="equal weights" width="400"/>
-<img src="exercise31_03.png" alt="equal weights" width="400"/>
+<img src="exercise31_01.png" alt="equal weights" width="320"/>
+<img src="exercise31_02.png" alt="equal weights" width="320"/>
+<img src="exercise31_03.png" alt="equal weights" width="320"/>
 </p>
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
-Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. 
-Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+In a second experiment the expected firing rate of one of the synapses was increased to `rate_exc[0] = 8 Hz` while the other one remained at `rate_exc[1] = 5 Hz`. 
 
 <p align="center"> 
-<img src="exercise31_04.png" alt="equal weights" width="400"/>
-<img src="exercise31_05.png" alt="equal weights" width="400"/>
-<img src="exercise31_06.png" alt="equal weights" width="400"/>
+<img src="exercise31_04.png" alt="equal weights" width="320"/>
+<img src="exercise31_05.png" alt="equal weights" width="320"/>
+<img src="exercise31_06.png" alt="equal weights" width="320"/>
 </p>
+
+## 3.2 
+
+## 3.3 
 
 # Chapter 4
 
