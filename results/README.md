@@ -138,7 +138,7 @@ This is even more obvious in the **third** graph, in which the same neuron **wit
 <img src="exercise21_03.png" alt="equal weights" width="300"/>
 </p>
 
-## 2.1 Spike-Rate Adaptation
+## 2.2 Refractory period
 
 In this exercise, I implemented a mechanism which models the refractory period (RP) observed in pyramidal neurons. The same 
 differential equation as the one used to describe the SRA conductance governs the evolution of the RP conductance, although
@@ -161,6 +161,30 @@ in the RP-free case, and by the firing rate being smaller (`r = 3.4 Hz`) than th
 
 
 # Chapter 3
+
+## 3.1 Spike-Timing Dependent Plasticity
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
+Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
+Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. 
+Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+<p align="center"> 
+<img src="exercise31_01.png" alt="equal weights" width="400"/>
+<img src="exercise31_02.png" alt="equal weights" width="400"/>
+<img src="exercise31_03.png" alt="equal weights" width="400"/>
+</p>
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
+Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
+Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. 
+Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+<p align="center"> 
+<img src="exercise31_04.png" alt="equal weights" width="400"/>
+<img src="exercise31_05.png" alt="equal weights" width="400"/>
+<img src="exercise31_06.png" alt="equal weights" width="400"/>
+</p>
 
 # Chapter 4
 

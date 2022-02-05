@@ -1,8 +1,8 @@
 from neurosim.neurosim import Neuron,Stimulus,Simulation
 from matplotlib import pyplot as plt
 import matplotlib as mlp
-mlp.rcParams['figure.figsize'] = (6,6)
-
+# mlp.rcParams['figure.figsize'] = (6,6)
+# mlp.use("TkAgg")
 dg_sra = 0.06
 
 lif_sra = Neuron(type="lif",
