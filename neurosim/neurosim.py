@@ -249,6 +249,7 @@ class Neuron:
     def STDP(self,pre,spike,post,stim):
         return self.A_ltp * pre * spike + self.A_ltd * post * stim
 
+    # Spike traces for STDP
     def spike_trace(self,type,x,spike):
 
         if type == 'pre':
@@ -258,8 +259,7 @@ class Neuron:
 
         return  -x / tau + spike
 
-
-
+    # Spike traces with METHOD IV from Morrison 2008 [NOT USED]
     def spike_trace_2(self,type,x,spike,antispike,**kwargs):
         if type == 'pre':
             tau = self.tau_ltp
@@ -306,89 +306,219 @@ class Stimulus:
 
     def __init__(self, neuron, stim_type, **kwargs):
 
-        # Parse parameters
-        self.__parse_parameters(kwargs)
+        # Parse KWARGS
+        self.rate_exc   = kwargs.get('rate_exc',6)
+        self.rate_inh   = kwargs.get('rate_inh',3)
+        self.t_0        = kwargs.get('t_0',0)
+        self.t_sim      = kwargs.get('t_sim',1000)
+        self.dt         = kwargs.get('dt',0.1)
+        self.stim_length = kwargs.get('stim_length',1)
+        self.I_ext      = kwargs.get('I_ext',2.0)
+        self.stim_start = kwargs.get('stim_start',0)
+        self.stim_end   = kwargs.get('stim_end',1000)
+        self.corr       = kwargs.get('corr',0.0)
+        self.corr_type  = kwargs.get('corr_type','none')
+        self.tau_corr   = kwargs.get('tau_corr', 20)
+
+        if self.corr_type != self.CorrType.NONE.value and \
+                self.corr_type != self.CorrType.INSTANTANEOUS.value and \
+                self.corr_type != self.CorrType.EXPONENTIAL.value:
+            sys.exit("Error: Correlation types must be one of: 'none', 'inst', 'exp'")
 
         # Fixed parameters from input
         self.type = stim_type
         self.neuron = neuron
         self.time = np.linspace(self.t_0, self.t_sim, int(self.t_sim / self.dt))
+
+        # Empty lists to be filled
         self.stim_const = []
+        self.stim_exc = []
+        self.stim_inh = []
+        self.stim_exc_times = []
+        self.stim_inh_times = []
 
-        # Initialize constant stimulus
-        if self.type == StimulusType.CONSTANT.value:
+        # Generate input stimuli
+        self.__create_stimuli()
+
+    def __create_stimuli(self):
+
+        if self.type == self.StimulusType.CONSTANT.value:
 
             self.__generate_constant_stimulus()
-        elif self.type == StimulusType.SINUSOIDAL.value:
-            self.__generate_sinusoidal_stimulus()
-        # Initialize periodic | poisson stimulus
-        elif self.type == StimulusType.PERIODIC.value or self.type == StimulusType.POISSON.value:
-            self.__create_stimuli(syntype='e')
-            self.__create_stimuli(syntype='i')
+
+        elif self.type == self.StimulusType.PERIODIC.value:
+
             self.I_ext = 0.0
+            self.__synaptic_inputs(self.__generate_periodic_stimulus)
+
+        elif self.type == self.StimulusType.POISSON.value:
+
+            self.I_ext = 0.0
+            self.__synaptic_inputs(self.__generate_poisson_stimulus)
+
         else:
-            sys.exit("Error: stimulus type must be either 'constant', 'periodic', 'sinusoidal', or 'poisson' ")
+            sys.exit("Error: stimulus type must be one of: 'constant', 'sinusoidal', 'periodic', 'poisson' ")
 
-    def __parse_parameters(self, arguments):
+    def __synaptic_inputs(self, generate_stimulus):
 
-        defaultValues = dict(rate_exc = 6, rate_inh = 3,
-                             t_0=0,t_sim=1000,dt=0.1,
-                             stim_length=1,
-                             I_ext=2.0,
-                             stim_start=0,stim_end=1000)
-
-        for key, defVal in defaultValues.items():
-            setattr(self,key,arguments.get(key,defVal))
-
-    def __create_stimuli(self,**kwargs):
-
-        if self.type == StimulusType.CONSTANT.value:
-            self.__generate_constant_stimulus()
-        else:
-
+        for syntype in ['e', 'i']:
             # Check synapse type
-            if kwargs['syntype'] == 'e':
+            if syntype == 'e':
                 N = self.neuron.N_exc
                 rate = self.rate_exc
                 name = ['RATE_EXC', 'N_EXC']
-            elif kwargs['syntype'] == 'i':
+            elif syntype == 'i':
                 N = self.neuron.N_inh
                 rate = self.rate_inh
                 name = ['RATE_INH', 'N_INH']
             else:
-                sys.exit('no buono')
+                sys.exit('Must define type of synapses to create inputs for')
 
-            # Create stimulus
-            stim = []
-            if isinstance(rate, list):
-                if len(rate) == N:
-                    for n in range(N):
-                        if self.type == StimulusType.PERIODIC.value:
-                            stim.append(self.__generate_periodic_stimulus(rate[n]))
+            if N > 0:
+                stim, stimtimes, stimindices = self.__make_stimulus(generate_stimulus, rate, N)
+
+                # Assign stimulus to correct attribute
+                if syntype == 'e':
+                    self.stim_exc = stim
+                    self.stim_exc_times = stimtimes
+                elif syntype == 'i':
+                    self.stim_inh = stim
+                    self.stim_inh_times = stimtimes
+                else:
+                    sys.exit('GOTTA BE E OR I')
+
+    def __make_stimulus(self, func, rate, N):
+
+        stim = []
+        stimtimes = []
+        stimindices = []
+
+        # If rate is a list
+        if isinstance(rate, list):
+            if len(rate) == N:
+                rate = rate
+            elif len(rate) == 1:
+                rate = rate * N
+        elif isinstance(rate, int):
+            rate = [rate] * N
+        else:
+            sys.exit('eee')
+
+        # IF UNCORRELATED
+        if self.corr_type == self.CorrType.NONE.value:
+            stimulus = [func(rate[n]) for n in range(N)]
+            stimindices = [stimulus[i][2] for i in range(N)]
+            stimtimes   = [stimulus[i][1] for i in range(N)]
+            stim        = [stimulus[i][0] for i in range(N)]
+        elif self.corr_type == self.CorrType.INSTANTANEOUS.value:
+            stimulus = self.__correlate_poisson(rate,N)
+            stimindices = [stimulus[2][i] for i in range(N)]
+            stimtimes   = [stimulus[1][i] for i in range(N)]
+            stim        = [stimulus[0][i] for i in range(N)]
+        elif self.corr_type == self.CorrType.EXPONENTIAL.value:
+            stimulus = self.__correlate_poisson(rate,N)
+            stimindices = [stimulus[2][i] for i in range(N)]
+            stimtimes   = [stimulus[1][i] for i in range(N)]
+            stim        = [stimulus[0][i] for i in range(N)]
+
+        return stim,stimtimes,stimindices
+
+    def __create_stimuli_old(self):
+
+        if self.type == self.StimulusType.CONSTANT.value:
+
+            self.__generate_constant_stimulus()
+
+        elif self.type == self.StimulusType.PERIODIC.value or self.type == self.StimulusType.POISSON.value:
+
+            self.I_ext = 0.0
+
+            for syntype in ['e','i']:
+
+                # Check synapse type
+                if syntype == 'e':
+                    N = self.neuron.N_exc
+                    rate = self.rate_exc
+                    name = ['RATE_EXC', 'N_EXC']
+                elif syntype == 'i':
+                    N = self.neuron.N_inh
+                    rate = self.rate_inh
+                    name = ['RATE_INH', 'N_INH']
+                else:
+                    sys.exit('Must define type of synapses to create inputs for')
+
+                # Create stimulus
+                stim = []
+                stimtimes = []
+
+                # If rate is a list
+                if isinstance(rate, list):
+
+                    # If the list is as long as the number of synapses
+                    if len(rate) == N:
+
+                        # Periodic stimulus
+                        if self.type == self.StimulusType.PERIODIC.value:
+                            stim = [self.__generate_periodic_stimulus(rate[n]) for n in range(N)]
+                            stimindices = [stim[i][2] for i in range(N)]
+                            stimtimes = [stim[i][1] for i in range(N)]
+                            stim = [stim[i][0] for i in range(N)]
+
+                        # Poisson stimulus
                         else:
-                            stim.append(self.__generate_poisson_stimulus(rate[n], self.time, self.dt))
-                elif len(rate) == 1:
-                    if self.type == StimulusType.PERIODIC.value:
-                        stim = [self.__generate_periodic_stimulus(rate[0])] * N
-                    else:
-                        stim = [self.__generate_poisson_stimulus(rate[0], self.time, self.dt) for s in range(N)]
-                else:
-                    sys.exit(f'Error: if {name[0]} is a LIST its length must be equal to {name[1]} or equal to 1')
-            elif isinstance(rate, int):
-                if self.type == StimulusType.PERIODIC.value:
-                    stim = [self.__generate_periodic_stimulus(rate)] * N
-                else:
-                    stim = [self.__generate_poisson_stimulus(rate, self.time, self.dt) for s in range(N)]
-            else:
-                sys.exit(f"Error: {name[0]} must be either INT or LIST")
+                            stim = [self.__generate_poisson_stimulus(rate[n]) for n in range(N)]
+                            stimindices = [stim[i][2] for i in range(N)]
+                            stimtimes = [stim[i][1] for i in range(N)]
+                            stim = [stim[i][0] for i in range(N)]
 
-            # Assign stimulus to correct attribute
-            if kwargs['syntype'] == 'e':
-                self.stim_exc = stim
-            elif kwargs['syntype'] == 'i':
-                self.stim_inh = stim
-            else:
-                sys.exit('no buono')
+
+                    # If the list contains only 1 value
+                    elif len(rate) == 1:
+
+                        # Periodic stimulus
+                        if self.type == self.StimulusType.PERIODIC.value:
+                            stim = [self.__generate_periodic_stimulus(rate[0])] * N
+                            stimindices = [stim[i][2] for i in range(N)]
+                            stimtimes = [stim[i][1] for i in range(N)]
+                            stim = [stim[i][0] for i in range(N)]
+                        # Poisson stimulus
+                        else:
+                            stim = [self.__generate_poisson_stimulus(rate[0]) for s in range(N)]
+                            stimindices = [stim[i][2] for i in range(N)]
+                            stimtimes = [stim[i][1] for i in range(N)]
+                            stim = [stim[i][0] for i in range(N)]
+
+                    # No other options
+                    else:
+                        sys.exit(f'Error: if {name[0]} is a LIST its length must be equal to {name[1]} or equal to 1')
+
+                # If list is an integer
+                elif isinstance(rate, int):
+
+                    # Periodic stimulus
+                    if self.type == self.StimulusType.PERIODIC.value:
+                        stim = [self.__generate_periodic_stimulus(rate)] * N
+                        stimtimes = [stim[i][1] for i in range(N)]
+                        stim = [stim[i][0] for i in range(N)]
+                    # Poisson stimulus
+                    else:
+                        stim = [self.__generate_poisson_stimulus(rate) for s in range(N)]
+                        stimtimes = [stim[i][1] for i in range(N)]
+                        stim = [stim[i][0] for i in range(N)]
+                else:
+                    sys.exit(f"Error: {name[0]} must be either INT or LIST")
+
+                # Assign stimulus to correct attribute
+                if syntype == 'e':
+                    self.stim_exc = stim
+                    self.stim_exc_times = stimtimes
+                elif syntype == 'i':
+                    self.stim_inh = stim
+                    self.stim_inh_times = stimtimes
+                else:
+                    sys.exit('no buono')
+        else:
+            sys.exit("Error: stimulus type must be one of: 'constant', 'sinusoidal', 'periodic', 'poisson' ")
 
     def __generate_constant_stimulus(self):
 
@@ -399,14 +529,10 @@ class Stimulus:
         stim[int(self.stim_start/self.dt):int(self.stim_end/self.dt)] = 1
         self.stim_const = stim*self.I_ext
 
-    def __generate_sinusoidal_stimulus(self):
-        rate = self.rate_exc
-        self.stim_const = self.I_ext*np.sin(2 * np.pi * rate * (0.001) * self.time)
-
     def __generate_periodic_stimulus(self, rate):
         time = np.linspace(self.t_0,self.t_sim,int(self.t_sim/self.dt))
         stimulus = np.zeros(len(time))
-
+        stimtimes = []
         stim_length_idx = int(self.stim_length/self.dt)
         stim_idx = []
 
@@ -439,41 +565,104 @@ class Stimulus:
             # Add inputs to stimulus vector
             try:
                 stimulus[np.concatenate(stim_idx)] = 1
+                stimtimes = time[np.concatenate(stim_idx)]
             except Exception as e:
                 stimulus[-stim_length_idx:] = 1
+                stimtimes = time[-stim_length_idx:]
 
-        return stimulus
+        return stimulus, stimtimes
 
-    def __generate_poisson_stimulus(self, rate, time, dt):
-        stimulus = np.zeros(len(time))
-        for t in range(len(time)):
-            if rate * dt / 1000 > np.random.random():
-                stimulus[t:t+int(1/dt)] = 1 # add a 1 ms stimulus
-        return stimulus
+    def __generate_poisson_stimulus(self, rate):
+        stimulus = np.zeros(len(self.time))
+        stimtimes = []
+        stimidx = []
+        for t in range(len(self.time)):
+            if rate * self.dt / 1000 > np.random.random() and stimulus[t] != 1:
+                stimulus[t:t+int(1/self.dt)] = 1 # add a 1 ms stimulus
+                stimtimes.append(self.time[t])
+                stimidx.append(t)
+        return stimulus, np.array(stimtimes), np.array(stimidx)
+
+    def __jitter_spike(self,spike_idx):
+        shift = int(np.random.exponential(self.tau_corr)/self.dt)
+        if spike_idx + shift > len(self.time):
+            shift = 0
+        sign = np.random.randint(-1,1)
+        return spike_idx + shift
+
+    def __correlate_poisson(self,rate,N):
+
+        stim = []
+        stimtimes = []
+        stimindices = []
+
+        # Generate source train with given rate
+        rate_source = rate[0]
+        source_train, source_times, source_idx = self.__generate_poisson_stimulus(rate_source)
+        stim.append(source_train)
+        stimtimes.append(source_times)
+        stimindices.append(source_idx)
+
+        for n in range(N-1):
+
+            # Pick spike times/indices from source train with probability p
+            p = np.sqrt(self.corr)
+            new_idx = np.array([s for s in source_idx if np.random.uniform() < p])
+
+            new_train = np.zeros(len(self.time))
+            if self.corr_type == self.CorrType.EXPONENTIAL.value:
+                new_idx = [self.__jitter_spike(s) for s in new_idx]
+
+
+            new_train[new_idx]=1
+
+            # Generate noise train to compensate for thinning rate loss
+            rate_noise = rate_source*(1-p)
+            noise_train, noise_times, noise_idx = self.__generate_poisson_stimulus(rate_noise)
+
+            # Combine new indices and noise indices
+            final_idx = np.sort(np.concatenate([new_idx,noise_idx]))
+
+            # Generate final spike train
+            final_train = np.zeros(len(self.time))
+            final_times = []
+            stim_length_idx = int(self.stim_length / self.dt)
+            for t in final_idx:
+                final_times.append(self.time[t])
+                try:
+                    final_train[t:t+stim_length_idx] = 1
+                except:
+                    final_train[t:] = 1
+
+            stim.append(final_train)
+            stimtimes.append(final_times)
+            stimindices.append(final_idx)
+
+            # plt.subplot(4,1,1)
+            # plt.plot(source_train)
+            # plt.subplot(4, 1, 2)
+            # plt.plot(new_train)
+            # plt.subplot(4, 1, 3)
+            # plt.plot(noise_train)
+            # plt.subplot(4, 1, 4)
+            # plt.plot(final_train)
+            # plt.show()
+
+        return stim, stimtimes, stimindices
 
     def add_stimulus(self,stim_type,**kwargs):
-        # Parse parameters
-        self.__parse_parameters(kwargs)
-
-        # Initialize constant stimulus
-        if stim_type == StimulusType.CONSTANT.value:
-            self.__generate_constant_stimulus()
-        elif stim_type == StimulusType.SINUSOIDAL.value:
-            self.__generate_sinusoidal_stimulus()
-        # Initialize periodic | poisson stimulus
-        elif stim_type == StimulusType.PERIODIC.value or stim_type == StimulusType.POISSON.value:
-            self.__create_stimuli(syntype='e')
-            self.__create_stimuli(syntype='i')
-            self.I_ext = 0.0
-        else:
-            sys.exit("Error: stimulus type must be either 'constant', 'periodic', 'sinusoidal', or 'poisson' ")
+        # TO RE WRITE
         return 1
 
-class StimulusType(Enum):
-    CONSTANT = 'constant'
-    SINUSOIDAL = 'sinusoidal'
-    PERIODIC = 'periodic'
-    POISSON = 'poisson'
+    class StimulusType(Enum):
+        CONSTANT = 'constant'
+        PERIODIC = 'periodic'
+        POISSON = 'poisson'
+
+    class CorrType(Enum):
+        NONE = 'none'
+        INSTANTANEOUS = 'inst'
+        EXPONENTIAL = 'exp'
 
 
 # ------------------------------- SIMULATION ----------------------------------- #
@@ -550,14 +739,20 @@ class Simulation:
         self.meanSpikes = 0
         self.outputFreq = []
 
-
     def simulate(self,**kwargs):
         self.trials = int(kwargs.get('trials',1))
 
+        print('\nSimulating...')
+
         if self.trials == 1:
+
+            print('trial 1 / 1')
             self.__runSim()
+
         elif self.trials > 1:
+
             self.__runTrials(self.trials)
+
         else:
             sys.exit('You cannot simulate 0 or -Int trials')
 
@@ -594,22 +789,24 @@ class Simulation:
         # Integration loop
         for t in range(len(self.simtime) - 1):
 
-            # Post-synaptic spike trace for STDP =[y(t) in Morrison et al, 2008]
-            post_trace[t + 1] = post_trace[t] + self.dt * self.neuron.spike_trace('post',post_trace[t],spike)
+            if self.neuron.stdp:
+                # Post-synaptic spike trace for STDP =[y(t) in Morrison et al, 2008]
+                post_trace[t + 1] = post_trace[t] + self.dt * self.neuron.spike_trace('post',post_trace[t],spike)
 
             # Update EXCITATORY synaptic conductances and STDP
             for m in range(self.neuron.N_exc):
 
-                # SPIKE TRACE for pre-synaptic spikes =[x(t) in Morrison et al 2008]
-                pre_trace_e[m][t + 1] = pre_trace_e[m][t] + self.dt * self.neuron.spike_trace('pre', pre_trace_e[m][t],
-                                                                                              self.input.stim_exc[m][t])
-                # SYNAPTIC WEIGHT
-                if w_e[m][t] < 6:
-                    w_e[m][t + 1] = w_e[m][t] + self.dt * self.neuron.STDP(pre_trace_e[m][t + 1], spike,
-                                                                           post_trace[t + 1], self.input.stim_exc[m][t])
-                else:
-                    w_e[m][t + 1] = w_e[m][t]
-                self.neuron.w_exc[m] = w_e[m][t + 1]
+                if self.neuron.stdp:
+                    # SPIKE TRACE for pre-synaptic spikes =[x(t) in Morrison et al 2008]
+                    pre_trace_e[m][t + 1] = pre_trace_e[m][t] + self.dt * self.neuron.spike_trace('pre', pre_trace_e[m][t],
+                                                                                                  self.input.stim_exc[m][t])
+                    # SYNAPTIC WEIGHT
+                    if w_e[m][t] < 6:
+                        w_e[m][t + 1] = w_e[m][t] + self.dt * self.neuron.STDP(pre_trace_e[m][t + 1], spike,
+                                                                               post_trace[t + 1], self.input.stim_exc[m][t])
+                    else:
+                        w_e[m][t + 1] = w_e[m][t]
+                    self.neuron.w_exc[m] = w_e[m][t + 1]
 
                 # CONDUCTANCE
                 g_ex[m][t + 1] = g_ex[m][t] + self.dt * self.neuron.synapse('e', g_ex[m][t], t, self.input, m)
@@ -618,30 +815,21 @@ class Simulation:
             # Update INHIBITORY synaptic conductances and STDP
             for m in range(self.neuron.N_inh):
 
-                # SPIKE TRACE for pre-synaptic spikes =[x(t) in Morrison et al 2008]
-                pre_trace_i[m][t + 1] = pre_trace_i[m][t] + self.dt * self.neuron.spike_trace('pre', pre_trace_i[m][t],
-                                                                                              self.input.stim_inh[m][t])
-                # SYNAPTIC WEIGHT
-                if w_i[m][t] < 6:
-                    w_i[m][t + 1] = w_i[m][t] + self.dt * self.neuron.STDP(pre_trace_i[m][t + 1], spike,
-                                                                           post_trace[t + 1], self.input.stim_inh[m][t])
-                else:
-                    w_e[m][t + 1] = w_e[m][t]
-                self.neuron.w_inh[m] = w_e[m][t + 1]
+                if self.neuron.stdp:
+                    # SPIKE TRACE for pre-synaptic spikes =[x(t) in Morrison et al 2008]
+                    pre_trace_i[m][t + 1] = pre_trace_i[m][t] + self.dt * self.neuron.spike_trace('pre', pre_trace_i[m][t],
+                                                                                                  self.input.stim_inh[m][t])
+                    # SYNAPTIC WEIGHT
+                    if w_i[m][t] < 6:
+                        w_i[m][t + 1] = w_i[m][t] + self.dt * self.neuron.STDP(pre_trace_i[m][t + 1], spike,
+                                                                               post_trace[t + 1], self.input.stim_inh[m][t])
+                    else:
+                        w_e[m][t + 1] = w_e[m][t]
+                    self.neuron.w_inh[m] = w_e[m][t + 1]
 
                 # CONDUCTANCE
                 g_in[m][t + 1] = g_in[m][t] + self.dt * self.neuron.synapse('i', g_in[m][t], t, self.input, m)
 
-
-
-
-
-            if self.neuron.N_inh > 1:
-                for n in range(self.neuron.N_inh):
-
-                    g_in[n][t + 1] = g_in[n][t] + self.dt * self.neuron.synapse('i', g_in[n][t], t, self.input, n)
-            elif self.neuron.N_inh == 1:
-                g_in[0][t + 1] = g_in[0][t] + self.dt * self.neuron.synapse('i', g_in[0][t], t, self.input, 0)
 
             # Update POTENTIAL and spike/reset
             if V[t] <= self.neuron.V_theta:
@@ -665,9 +853,6 @@ class Simulation:
                 else:
                     ISIs.append(round(self.simtime[t]-spikeTimes[-2],1))
 
-                # Update last postsynaptic spike
-                self.t_post = self.simtime[t]
-
                 # Update potential to spiking potential
                 V[t + 1] = self.neuron.V_spike
 
@@ -685,8 +870,10 @@ class Simulation:
                 spike = False
 
             # Update SRA conductance and Refractory Period Conductance
-            g_sra[t+1] = g_sra[t] + self.dt * self.neuron.adaptation('SRA',g_sra[t],spike)
-            g_ref[t+1] = g_ref[t] + self.dt * self.neuron.adaptation('RP',g_ref[t], spike)
+            if self.neuron.sra != 0 :
+                g_sra[t+1] = g_sra[t] + self.dt * self.neuron.adaptation('SRA',g_sra[t],spike)
+            if self.neuron.ref != 0 :
+                g_ref[t+1] = g_ref[t] + self.dt * self.neuron.adaptation('RP',g_ref[t], spike)
 
 
             # Istantaneous firing rate
@@ -715,7 +902,6 @@ class Simulation:
             self.CV = np.std(self.ISI)/np.mean(self.ISI)
         else:
             self.CV = 0
-
 
     def __runTrials(self, trials):
         """
@@ -902,3 +1088,49 @@ t_0     = {self.t_0}    # Start simulation time (ms)
 t_sim   = {self.t_sim}  # Simulation duration (ms)
 dt      = {self.dt}     # Integration time step (ms)
 """)
+
+
+
+# ------------------------------- STATS ----------------------------------- #
+
+
+def cross_correlogram(trains,bin_range,dt,type):
+
+    bins = abs(bin_range[0]) + abs(bin_range[1]) + 1
+    # bins = 100
+    M = np.linspace(bin_range[0], bin_range[1], bins)
+    Hm = []
+    delay = []
+
+    n = 0
+    if type == 'within':
+
+        for i in range(len(trains)):
+            # print(f'Train {i+1} / {len(trains)}')
+            for spike1 in trains[i]:
+                for j in range(len(trains)):
+                    if j != i:
+                        for spike2 in trains[j]:
+                            delay.append(spike1-spike2)
+                            n += 1
+    elif type == 'between':
+        if len(trains) == 2:
+            for i, train in enumerate(trains[0]):
+                # print(f'Group 1 Train {i+1} / {len(trains[0])}')
+                for spike1 in train:
+                    for j, train2 in enumerate(trains[1]):
+                        for spike2 in train2:
+                            delay.append(spike1-spike2)
+                            n += 1
+        else:
+            sys.exit('Error: to compare between two groups TRAINS must be a list of 2 elements, each of which is a list')
+    else:
+        sys.exit('Error: Either within or between groups analysis')
+
+    for m in M:
+        Nm = 0
+        for d in delay:
+            if (m - 1 / 2) * dt < d < (m + 1 / 2) * dt:
+                Nm += 1
+        Hm.append(Nm)#/n*100 )
+    return M, Hm

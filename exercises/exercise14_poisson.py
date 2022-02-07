@@ -1,6 +1,7 @@
-from neurosim.neurosim import Neuron, Stimulus, StimulusType,Simulation
+from neurosim.neurosim import Neuron, Stimulus, Simulation
 from matplotlib import pyplot as plt
 import matplotlib as mlp
+from time import time as sw
 
 mlp.rcParams['figure.figsize'] = (9,9)
 
@@ -21,6 +22,7 @@ stim = Stimulus(stim_type='poisson', neuron=lif,
 
 # Create simulation object
 sim = Simulation(neuron=lif,stimulus=stim,dt=0.1)
+
 
 # Run multi-trial situation
 sim.simulate(trials=50)
@@ -81,7 +83,7 @@ for i,w_e in enumerate(weights):
                  N_inh=10, w_inh=0.5)
 
     # Create poisson stimulus
-    stim = Stimulus(stim_type=StimulusType.POISSON, neuron=lif,
+    stim = Stimulus(stim_type='poisson', neuron=lif,
                     rate_exc=10, rate_inh=10,
                     t_sim=10000, dt=0.1)
 
