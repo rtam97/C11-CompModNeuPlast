@@ -36,6 +36,9 @@ In this directory are all the scripts used to generate the figures for the exerc
 
 [2.2 Refractory Period](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/exercises/exercise22_refractory.py)
 
+[3.1 Spike-Timing Dependent Plasticity](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/exercises/exercise31_stdp.py)
+
+[3.2 Correlated Spike Trains](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/exercises/exercise32_correlated.py)
 ...
 
 And many more to come!
