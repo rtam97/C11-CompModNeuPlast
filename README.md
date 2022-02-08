@@ -76,6 +76,10 @@ The process of simulating neurons is achieved in 4 steps:
 
 ## Usage
 
+<p align="center"> 
+<img src="results/00_tutorial.png" alt="equal weights" width="500"/>
+</p>
+
 ### Here is an example for simulating a simple LIF neuron with constant current input
 
 First, the right classes are imported
@@ -130,13 +134,16 @@ sim.print_sim_parameters()
 # Print simulation statistics
 sim.print_sim_stats()
 
+# Plot input current
+sim.plotInputCurrent(show=True)
+
 # Plot membrane potential
 sim.plotVoltageTrace(show=True)
 
 ```
 
 <p align="center"> 
-<img src="results/00_tutorial.png" alt="equal weights" width="400"/>
+<img src="results/00_tutorial.png" alt="equal weights" width="500"/>
 </p>
 
 
