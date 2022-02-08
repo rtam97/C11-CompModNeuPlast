@@ -1,43 +1,63 @@
 # Results
 
-# Chapter 2
+# Chapter 3
 
-## 2.1 Spike-Rate Adaptation
+## 3.1 Spike-Timing Dependent Plasticity
 
-In this exercise, I implemented a mechanism for spike-rate adaptation (SRA) in a LIF neuron. I simulated the neuron receiving a constant step current input `I_ext = 1.45` for a given amount of time. In the following graphs, one can observe the effect of SRA on the LIF neuron when it is added to the model. 
+In this exercise I implemented a mechanism for Spike-Timing Dependent Plasticity (STDP, in which the weight of each synaptic input was governed by the following differential equation:
 
-In the **first** graph the LIF is simulated **without any SRA** (`dg_sra = 0.0`) for `t_sim = 500 ms`, and a step current is applied from `stim_start = 50 ms` to `stim_end = 350 ms` . The SRA conductance is zero the entire time, and the spike frequency (inverse of the ISI for each spike) is constant all throughout the simulation
+`dw[t]/dt  = A_ltp*X[t]*d[t-t_pre] + A_ltd*Y[t]*d[t-t_post]`
 
-In the **second** graph the LIF is simulated **with SRA** (`dg_sra = 0.06`). The length of the simulation and the properties of the input current are the same as before. As the neuron spikes, the SRA conductance rises sharply, only to decay until the next spike is emitted. The input current is strong enough to induce sustained spiking in the neuron, so that the SRA conductance cannot decay back to `0`. Instead, the average conductance slowly grows towards its saturation point, before the step current is removed, at which point it decays back to baseline. The effect on the spiking frequency is clear: as the neuron emits more and more spikes, the inter-spike intervals get longer and longer, growing exponentially.
+where `X[t]` and `Y[t]` are the spike traces for the pre- and post-synaptic neurons, respectively, as described in [Morrison et al., 2008](https://doi.org/10.1007/s00422-008-0233-1), and `d[*]` is the Dirac's delta function. 
 
-This is even more obvious in the **third** graph, in which the same neuron **with SRA** is simulated for a longer time period (`t_sim = 1000 ms`) and the step current is applied for longer (`750 ms`). Here, the average SRA conductance reaches its saturation point at time `t_sat ≈ 500 ms`, the same time-point at which the spiking frequency has decayed to its lowest fixed point, given the current input. After this time-point the spiking frequency will remain constant until the step current is changed.
+STDP was added to a traditional LIF neuron, receiving `N_exc = 2` excitatory synapses and no inhibitory ones. The two excitatory synapses had equal initial weights (`w_exc = 1.0`). The LTP amplitude was set to `A_ltp = 0.1` and the LTD amplitude was set to `A_ltd = -0.05`. Time constants for LTP and LTD were set to `tau_ltp = 17 ms` and `tau_ltd = 34 ms`.
 
-<p align="center"> 
-<img src="exercise21_01.png" alt="equal weights" width="300"/>
-<img src="exercise21_02.png" alt="equal weights" width="300"/>
-<img src="exercise21_03.png" alt="equal weights" width="300"/>
-</p>
+The neuron was simulated for `t_sim = 15` seconds, while receiving poisson distributed inputs from both pre-synaptic neurons, with expected firing rate `rate_exc = 5 Hz` for both.
 
-## 2.2 Refractory period
-
-In this exercise, I implemented a mechanism which models the refractory period (RP) observed in pyramidal neurons. The same 
-differential equation as the one used to describe the SRA conductance governs the evolution of the RP conductance, although
-the parameters are now different: `E_rp = -70` , `tau_rp = 50` , and `dg_rp = 1.2`.
-
-The refractory period was added to a LIF neuron receiving 10 excitatory and 10 inhibitory synaptic inputs, in the same 
-configuration as the one described in [Exercise 1.4](#14-poisson-spike-trains). The synaptic weights were adjusted so that,
-in absence of RP, the excitatory and inhibitory inputs would be perfectly balanced (`We = 0.55` and `Wi = 0.50`).
-
-The neuron was simulated for 50 trials of 10 seconds each, the ISI were determined, and their CV was computed. 
-
-The distributions of both ISI and CV are plotted in the graph below. If compared to the result from Exercise 1.4 with the 
-same [synaptic weights](#balanced-weights), it can be clearly seen that, after addition of the refractory period, the spiking becomes a lot more
-regular, as indicated by the average CV being smaller (`CV = 0.656`), by the ISI distribution which looks less exponential than
-in the RP-free case, and by the firing rate being smaller (`r = 3.4 Hz`) than the one expected (`r_exp = 5 Hz`).
 
 <p align="center"> 
-<img src="exercise22.png" alt="equal weights" width="700"/>
+<img src="exercise31_01.png" alt="equal weights" width="320"/>
+<img src="exercise31_02.png" alt="equal weights" width="320"/>
+<img src="exercise31_03.png" alt="equal weights" width="320"/>
 </p>
+
+In a second experiment the expected firing rate of one of the synapses was increased to `rate_exc[0] = 8 Hz` while the other one remained at `rate_exc[1] = 5 Hz`. 
+
+<p align="center"> 
+<img src="exercise31_04.png" alt="equal weights" width="320"/>
+<img src="exercise31_05.png" alt="equal weights" width="320"/>
+<img src="exercise31_06.png" alt="equal weights" width="320"/>
+</p>
+
+## 3.2 Correlated Spike Trains
+
+In this exercise I implemented a function to generate time-correlated spike trains. The procedure follows the algorithm presented _method 2_ of [Brette, 2008](http://romainbrette.fr/WordPress3/wp-content/uploads/2014/06/Brette2008NC.pdf). Briefly, a Poisson-distributed `source_train` is generated as [before](#3.2-Correlated-Spike-Trains). Next, each spike is copied to a `new_train`, with a probability of `p = sqrt(c)`, where `c` is the desired correlation between spike trains. In order to make up for the loss of firing rate caused by the thinning, another `noise_train` is generated with rate `r = r_source*(1-p)`, and it is combined with the `new_train` to generate the `final_train`. The method described generates instantaneous (`'inst'`) correlation between spike trains. I also implemented the possibility to generate exponentially (`'exp'`) correlated spike trains. To achieve this each new spike was jittered by an exponentially distributed random amount.
+
+I also implemented a method to compute and plot the cross-correlogram between 2 or more spike trains. It follows the method described in [Dayan and Abbot, 2007](http://www.gatsby.ucl.ac.uk/~lmate/biblio/dayanabbott.pdf).
+
+I created two groups of 10 _instantaneously_ correlated Poisson spike trains, with correlation `c = 0.3`, firing rate `r = 10 Hz` and duration `t_stim = 10 s`. The cross-correlograms `'within'` each group show that, indeed, for the majority of the spike pairs in the 10 spike trains, the lag between them is equal to zero, indicating that they are firing synchronously. When the cross-correlation is however computed `'between'` Group 1 and Group 2, no correlation was found, as evidenced by the lack of a peak at zero-lag.
+
+<p align="center"> 
+<img src="exercise32_02.png" alt="instantaneous-correlation" width="1000"/>
+</p>
+
+When the same experiment was repeated with 2 groups of 10 _exponentially_ correlated spike trains, similar results occurred: Correlation within groups showed a peak at the zero-lag, which however did not decline sharply but which decayed exponentially, as expected. Once again, correlation between-groups was absent.
+
+<p align="center"> 
+<img src="exercise32_01.png" alt="exponential-correlation" width="1000"/>
+</p>
+
+
+## 3.3 Correlations and STDP
+
+Lorem ipsum dolor sit amet cum magna charta simplex ieronis
+Lorem ipsum dolor sit amet cum magna charta simplex ieronis
+Lorem ipsum dolor sit amet cum magna charta simplex ieronis
+Lorem ipsum dolor sit amet cum magna charta simplex ieronis
+Lorem ipsum dolor sit amet cum magna charta simplex ieronis
+Lorem ipsum dolor sit amet cum magna charta simplex ieronis
+Lorem ipsum dolor sit amet cum magna charta simplex ieronis
+
 
 # Go back to:
 
@@ -50,3 +70,4 @@ in the RP-free case, and by the firing rate being smaller (`r = 3.4 Hz`) than th
 [Chapter 4: Synaptic Homeostasis](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/results/unit4/README.md)
 
 [Chapter 4: Short-Term Plasticity](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/results/unit5/README.md)
+
