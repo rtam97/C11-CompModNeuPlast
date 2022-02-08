@@ -554,7 +554,7 @@ class Stimulus:
         sign = np.random.randint(-1,1)
         return spike_idx + shift
 
-    def __correlate_poisson(self,rate,N):
+    def __correlate_poisson_old(self,rate,N):
 
         stim = []
         stimtimes = []
@@ -614,6 +614,72 @@ class Stimulus:
 
         return stim, stimtimes, stimindices
 
+    def __correlate_poisson(self,rate,N):
+
+        stim = []
+        stimtimes = []
+        stimindices = []
+
+        # Generate source train with given rate
+        rate_source = rate[0]
+        source_train, source_times, source_idx = self.__generate_poisson_stimulus(rate_source)
+        stim.append(source_train)
+        stimtimes.append(source_times)
+        stimindices.append(source_idx)
+
+        n = 0
+        while n < N-1:
+
+            # Pick spike times/indices from source train with probability p
+            p = np.sqrt(self.corr)
+            new_idx = np.array([s for s in source_idx if np.random.uniform() < p])
+
+            new_train = np.zeros(len(self.time))
+            if self.corr_type == self.CorrType.EXPONENTIAL.value:
+                new_idx = [self.__jitter_spike(s) for s in new_idx]
+
+
+            new_train[new_idx]=1
+
+            # Generate noise train to compensate for thinning rate loss
+            rate_noise = rate_source*(1-p)
+            noise_train, noise_times, noise_idx = self.__generate_poisson_stimulus(rate_noise)
+
+            # Combine new indices and noise indices
+            final_idx = np.sort(np.concatenate([new_idx,noise_idx]))
+
+            # Generate final spike train
+            final_train = np.zeros(len(self.time))
+            final_times = []
+            stim_length_idx = int(self.stim_length / self.dt)
+            for t in final_idx:
+                final_times.append(self.time[t])
+                try:
+                    final_train[t:t+stim_length_idx] = 1
+                except:
+                    final_train[t:] = 1
+
+            stim.append(final_train)
+            stimtimes.append(final_times)
+            stimindices.append(final_idx)
+
+
+            source_train = final_train
+            source_idx = final_idx
+            source_times = final_times
+            n += 1
+
+            # plt.subplot(4,1,1)
+            # plt.plot(source_train)
+            # plt.subplot(4, 1, 2)
+            # plt.plot(new_train)
+            # plt.subplot(4, 1, 3)
+            # plt.plot(noise_train)
+            # plt.subplot(4, 1, 4)
+            # plt.plot(final_train)
+            # plt.show()
+
+        return stim, stimtimes, stimindices
     def add_stimulus(self,stim_type,**kwargs):
         return 1
 
