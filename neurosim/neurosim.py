@@ -47,24 +47,43 @@ class Neuron:
         self.E_rp = kwargs.get('E_rp',-70)
         self.tau_rp = kwargs.get('tau_rp',50)
 
-        # Spike-Timing Dependend Plasticity
-        self.stdp = kwargs.get('stdp', False)
-        if self.stdp :
-            self.A_ltp = kwargs.get('A_ltp',1.0)
-            self.A_ltd = kwargs.get('A_ltd', -0.5)
+        # Spike-Timing Dependend Plasticity EXCITATORY
+        self.stdp = kwargs.get('stdp', self.stdp_types.BOTH.value)
+        self.tau_ltp_e = kwargs.get('tau_ltp_e', 17)
+        self.tau_ltd_e = kwargs.get('tau_ltd_e', 34)
+
+        if self.stdp == self.stdp_types.EXC.value or self.stdp == self.stdp_types.BOTH.value:
+            self.A_ltp_e = kwargs.get('A_ltp_e',1.0)
+            self.A_ltd_e = kwargs.get('A_ltd_e', -0.5)
         else:
-            self.A_ltp = 0
-            self.A_ltd = 0
-        self.tau_ltp = kwargs.get('tau_ltp',17)
-        self.tau_ltd = kwargs.get('tau_ltd',34)
+            self.A_ltp_e = 0
+            self.A_ltd_e = 0
 
 
-        synaptic_args = ['E_exc' , 'w_exc', 'tau_e', 'E_inh', 'w_inh', 'tau_i']
+        # Spike-Timing Dependend Plasticity INHIBITORY
+        self.tau_ltp_i = kwargs.get('tau_ltp_i', 17)
+        self.tau_ltd_i = kwargs.get('tau_ltd_i', 34)
+
+        if self.stdp == self.stdp_types.INH.value or self.stdp == self.stdp_types.BOTH.value:
+            self.A_ltp_i = kwargs.get('A_ltp_i', 1.0)
+            self.A_ltd_i = kwargs.get('A_ltd_i', -0.5)
+        else:
+            self.A_ltp_i = 0
+            self.A_ltd_i = 0
+
+
+        synaptic_args = ['E_exc', 'w_exc', 'tau_e', 'A_ltp_e', 'A_ltd_e',
+                         'E_inh', 'w_inh', 'tau_i', 'A_ltp_i', 'A_ltd_i']
 
         # Iterate through default values
         for key in synaptic_args:
             # Set synaptic attributes
             self.__set_synaptic_attributes(key)
+
+        self.used_exc = 0
+        self.used_inh = 0
+
+        print('\nCreated Neuron')
 
     # Set attributes to synapse
     def __set_synaptic_attributes(self, key):
@@ -79,6 +98,12 @@ class Neuron:
         elif key == 'tau_e':
             if not isinstance(self.tau_e, list):
                 self.tau_e = [self.tau_e] * self.N_exc
+        elif key == 'A_ltp_e':
+            if not isinstance(self.A_ltp_e, list):
+                self.A_ltp_e = [self.A_ltp_e] * self.N_exc
+        elif key == 'A_ltd_e':
+            if not isinstance(self.A_ltd_e, list):
+                self.A_ltd_e = [self.A_ltd_e] * self.N_exc
 
         # Inhibitory attributes
         elif key == 'E_inh':
@@ -90,6 +115,12 @@ class Neuron:
         elif key == 'tau_i':
             if not isinstance(self.tau_i, list):
                 self.tau_i = [self.tau_i] * self.N_inh
+        elif key == 'A_ltp_i':
+            if not isinstance(self.A_ltp_i, list):
+                self.A_ltp_i = [self.A_ltp_i] * self.N_inh
+        elif key == 'A_ltd_i':
+            if not isinstance(self.A_ltd_i, list):
+                self.A_ltd_i = [self.A_ltd_i] * self.N_inh
 
     # Add extra synapses to neuron
     def add_synapses(self,type,N,**kwargs):
@@ -234,6 +265,7 @@ class Neuron:
 
         return -g / tau + w * t_stim[t]
 
+    # Differential equation for spike-rate and refractory adaptations
     def adaptation(self,adapt_type,g,spike):
         tau = 1
         dg = 0
@@ -246,16 +278,28 @@ class Neuron:
         return -g/tau + dg*spike
 
     # Spike timing dependent plasticity
-    def STDP(self,pre,spike,post,stim):
-        return self.A_ltp * pre * spike + self.A_ltd * post * stim
+    def STDP(self,syn,pre,spike,post,stim,n):
+        if syn == 'e':
+            A_ltp = self.A_ltp_e[n]
+            A_ltd = self.A_ltd_e[n]
+        else:
+            A_ltp = self.A_ltp_i[n]
+            A_ltd = self.A_ltd_i[n]
+        return A_ltp * pre * spike + A_ltd * post * stim
 
     # Spike traces for STDP
-    def spike_trace(self,type,x,spike):
+    def spike_trace(self,syn,trace_type,x,spike):
 
-        if type == 'pre':
-            tau = self.tau_ltp
+        if trace_type == 'pre':
+            if syn == 'e':
+                tau = self.tau_ltp_e
+            else:
+                tau = self.tau_ltp_i
         else:
-            tau = self.tau_ltd
+            if syn == 'e':
+                tau = self.tau_ltd_e
+            else:
+                tau = self.tau_ltd_i
 
         return  -x / tau + spike
 
@@ -300,35 +344,45 @@ Time constant        (tau_i) :  {self.tau_i} ms
 Synaptic strength    (w_inh) :  {self.w_inh}
                 """)
 
+    class stdp_types(Enum):
+        EXC = 'e'
+        INH = 'i'
+        BOTH = 'both'
+
 # ------------------------------- STIMULUS ----------------------------------- #
 
 class Stimulus:
 
     def __init__(self, neuron, stim_type, **kwargs):
 
+        # Fixed parameters from input
+        self.type = stim_type
+        self.neuron = neuron
+
+
         # Parse KWARGS
-        self.rate_exc   = kwargs.get('rate_exc',6)
-        self.rate_inh   = kwargs.get('rate_inh',3)
-        self.t_0        = kwargs.get('t_0',0)
-        self.t_sim      = kwargs.get('t_sim',1000)
-        self.dt         = kwargs.get('dt',0.1)
-        self.stim_length = kwargs.get('stim_length',1)
-        self.I_ext      = kwargs.get('I_ext',2.0)
-        self.stim_start = kwargs.get('stim_start',0)
-        self.stim_end   = kwargs.get('stim_end',1000)
-        self.corr       = kwargs.get('corr',0.0)
-        self.corr_type  = kwargs.get('corr_type','none')
-        self.tau_corr   = kwargs.get('tau_corr', 20)
+        self.S_e = kwargs.get('S_e', self.neuron.N_exc)     # Number of excitatory synapses to contact  (PERIODIC & POISSON)
+        self.S_i = kwargs.get('S_i', self.neuron.N_inh)     # Number of inhibitory synapses to contact  (PERIODIC & POISSON)
+        self.rate_exc   = kwargs.get('rate_exc',6)          # Rate of excitatory stimulus               (PERIODIC & POISSON)
+        self.rate_inh   = kwargs.get('rate_inh',3)          # Rate of ihibitory stimulus                (PERIODIC & POISSON)
+        self.stim_length = kwargs.get('stim_length',1)      # Length of each spike (ms)                 (PERIODIC & POISSON)
+        self.corr_type = kwargs.get('corr_type', 'none')    # Correlation type                          (POISSON)
+        self.corr = kwargs.get('corr', 0.0)                 # Amount of correlation between stimuli     (POISSON)
+        self.tau_corr = kwargs.get('tau_corr', 20)          # Time constant for exp. correlated stimuli (POISSON)
+        self.I_ext      = kwargs.get('I_ext',2.0)           # Amount of current injection               (CONSTANT)
+        self.stim_start = kwargs.get('stim_start',0)        # Start time of current injection           (CONSTANT)
+        self.stim_end   = kwargs.get('stim_end',1000)       # End time of current injection             (CONSTANT)
+        self.t_0        = kwargs.get('t_0',0)               # Start time of simulation
+        self.t_sim      = kwargs.get('t_sim',1000)          # End time of simulation
+        self.dt         = kwargs.get('dt',0.1)              # Time step of simulation
+        self.time = np.linspace(self.t_0, self.t_sim, int(self.t_sim / self.dt))
 
         if self.corr_type != self.CorrType.NONE.value and \
                 self.corr_type != self.CorrType.INSTANTANEOUS.value and \
                 self.corr_type != self.CorrType.EXPONENTIAL.value:
             sys.exit("Error: Correlation types must be one of: 'none', 'inst', 'exp'")
 
-        # Fixed parameters from input
-        self.type = stim_type
-        self.neuron = neuron
-        self.time = np.linspace(self.t_0, self.t_sim, int(self.t_sim / self.dt))
+
 
         # Empty lists to be filled
         self.stim_const = []
@@ -341,7 +395,7 @@ class Stimulus:
         self.__create_stimuli()
 
     def __create_stimuli(self):
-
+        print('\nGenerating stimulus ....')
         if self.type == self.StimulusType.CONSTANT.value:
 
             self.__generate_constant_stimulus()
@@ -359,31 +413,38 @@ class Stimulus:
         else:
             sys.exit("Error: stimulus type must be one of: 'constant', 'sinusoidal', 'periodic', 'poisson' ")
 
-    def __synaptic_inputs(self, generate_stimulus):
+    def __synaptic_inputs(self, stimgen):
 
         for syntype in ['e', 'i']:
             # Check synapse type
             if syntype == 'e':
                 N = self.neuron.N_exc
+                to_add = self.S_e
                 rate = self.rate_exc
+                used = self.neuron.used_exc
                 name = ['RATE_EXC', 'N_EXC']
             elif syntype == 'i':
                 N = self.neuron.N_inh
+                to_add = self.S_e
                 rate = self.rate_inh
+                used = self.neuron.used_inh
                 name = ['RATE_INH', 'N_INH']
             else:
                 sys.exit('Must define type of synapses to create inputs for')
 
-            if N > 0:
-                stim, stimtimes = self.__make_stimulus(generate_stimulus, rate, N)
+            # Create the stimulus for each synapse
+            if to_add > 0 and N > used and N >= used + to_add:
+                stim, stimtimes = self.__make_stimulus(stimgen, rate, to_add)
 
                 # Assign stimulus to correct attribute
                 if syntype == 'e':
                     self.stim_exc = stim
                     self.stim_exc_times = stimtimes
+                    self.neuron.used_exc += to_add
                 elif syntype == 'i':
                     self.stim_inh = stim
                     self.stim_inh_times = stimtimes
+                    self.neuron.used_inh += to_add
                 else:
                     sys.exit('GOTTA BE E OR I')
 
@@ -554,7 +615,6 @@ class Stimulus:
         return stim, stimtimes, stimindices
 
     def add_stimulus(self,stim_type,**kwargs):
-        # TO RE WRITE
         return 1
 
     class StimulusType(Enum):
@@ -571,31 +631,39 @@ class Stimulus:
 # ------------------------------- SIMULATION ----------------------------------- #
 
 class Simulation:
+
     def __init__(self,neuron,stimulus,**kwargs):
 
         self.neuron = neuron
         self.input = stimulus
 
-        if 't_0' in kwargs.keys():
-            self.t_0 = kwargs['t_0']
-        elif hasattr(self.input,'t_0'):
-            self.t_0 = self.input.t_0
-        else:
-            self.t_0 = 0
+        # Multiple stimuli
+        if isinstance(self.input,list) and len(self.input) > 1:
 
-        if 't_sim' in kwargs.keys():
-            self.t_sim = kwargs['t_sim']
-        elif hasattr(self.input,'t_sim'):
-            self.t_sim = self.input.t_sim
-        else:
-            self.t_sim = 1000
+            new_input = self.input[0]
 
-        if 'dt' in kwargs.keys():
-            self.dt= kwargs['dt']
-        elif hasattr(self.input,'dt'):
-            self.dt = self.input.dt
-        else:
-            self.dt = 0.1
+
+            self.stim_group_boundary = len(self.input[0].stim_exc)-1
+            new_input.stim_exc = self.input[0].stim_exc + self.input[1].stim_exc
+            new_input.stim_exc_times = self.input[0].stim_exc_times + self.input[1].stim_exc_times
+
+            new_input.stim_inh = self.input[0].stim_inh + self.input[1].stim_inh
+            new_input.stim_inh_times = self.input[0].stim_inh_times + self.input[1].stim_inh_times
+
+            if self.input[0].t_0 == self.input[1].t_0 and self.input[0].t_sim == self.input[1].t_sim and self.input[0].dt == self.input[1].dt:
+                new_input.t_0 = self.input[0].t_0
+                new_input.dt = self.input[0].dt
+                new_input.t_sim = self.input[0].t_sim
+            else:
+                sys.exit('The time parameters must be equal for both stimuli')
+
+            self.input = new_input
+
+        self.t_0 = kwargs.get('t_0',(hasattr(self.input,'t_0'))*self.input.t_0)
+        self.t_sim = kwargs.get('t_sim', (1-hasattr(self.input, 't_sim'))*1000 + # if nothing is given
+                                (hasattr(self.input, 't_sim')) * self.input.t_sim) # if stimulus has time
+        self.dt = kwargs.get('dt', (1 - hasattr(self.input, 'dt')) * 0.1 +  # if nothing is given
+                                (hasattr(self.input, 'dt')) * self.input.dt)  # if stimulus has time
 
         self.trials = int(kwargs.get('trials', 1))
 
@@ -609,7 +677,7 @@ class Simulation:
         self.potential = np.zeros(len(self.simtime))
 
         # Empty excitatory conductance vector/matrix
-        self.g_exc = np.zeros((neuron.N_exc,len(self.simtime)))
+        self.g_exc = np.zeros((neuron.N_exc, len(self.simtime)))
 
         # Empty inhibitory conductance vector/matrix
         self.g_inh = np.zeros((neuron.N_inh, len(self.simtime)))
@@ -620,15 +688,14 @@ class Simulation:
         # Empty Refractory Period conductance vector
         self.g_ref = np.zeros(len(self.simtime))
 
-
         # Empty Spike Timeing Trace vectors
         self.pre_trace_e = np.zeros((self.neuron.N_exc,len(self.simtime)))
         self.pre_trace_i = np.zeros((self.neuron.N_inh, len(self.simtime)))
         self.post_trace = np.zeros(len(self.simtime))
 
+        # Vector of weights
         self.weights_e = np.array([np.full(len(self.simtime),self.neuron.w_exc[m]) for m in range(self.neuron.N_exc)])
         self.weights_i = np.array([np.full(len(self.simtime),self.neuron.w_inh[n]) for n in range(self.neuron.N_inh)])
-
 
 
         # Empty counters
@@ -645,7 +712,7 @@ class Simulation:
     def simulate(self,**kwargs):
         self.trials = int(kwargs.get('trials',1))
 
-        print('\nSimulating...')
+        print('\nSimulating ...')
 
         if self.trials == 1:
 
@@ -672,41 +739,48 @@ class Simulation:
         g_in = self.g_inh
         g_sra = self.g_sra
         g_ref = self.g_ref
-        V[0] = self.neuron.V_init
-        spikeCount = 0
-        scIst = 0
-        spikeTimes = []
-        ISIs       = []
-        sra_end     = 0
-        spike = False
-        fr = []
-
         pre_trace_e = self.pre_trace_e
         pre_trace_i = self.pre_trace_i
         post_trace = self.post_trace
-
-
         w_e = self.weights_e
         w_i = self.weights_i
+
+        # Counters
+        spikeCount = 0
+        scIst = 0
+        spikeTimes = []
+        ISIs = []
+        sra_end = 0
+        spike = False
+        fr = []
+
+        # initial value
+        V[0] = self.neuron.V_init
+
 
         # Integration loop
         for t in range(len(self.simtime) - 1):
 
+            if np.mod(round(self.simtime[t],1),1000) == 0:
+                print(f'\r{round(self.simtime[t],1)/1000} / {self.t_sim/1000} s',end='')
+
+            # Post-synaptic spike trace for STDP [== y(t) in Morrison et al, 2008]
             if self.neuron.stdp:
-                # Post-synaptic spike trace for STDP =[y(t) in Morrison et al, 2008]
-                post_trace[t + 1] = post_trace[t] + self.dt * self.neuron.spike_trace('post',post_trace[t],spike)
+                post_trace[t + 1] = post_trace[t] + self.dt * self.neuron.spike_trace(syn='both', trace_type='post',
+                                                                                      x = post_trace[t], spike = spike)
 
             # Update EXCITATORY synaptic conductances and STDP
             for m in range(self.neuron.N_exc):
 
-                if self.neuron.stdp:
-                    # SPIKE TRACE for pre-synaptic spikes =[x(t) in Morrison et al 2008]
-                    pre_trace_e[m][t + 1] = pre_trace_e[m][t] + self.dt * self.neuron.spike_trace('pre', pre_trace_e[m][t],
-                                                                                                  self.input.stim_exc[m][t])
+                if self.neuron.stdp == self.neuron.stdp_types.BOTH.value or self.neuron.stdp == self.neuron.stdp_types.EXC.value:
+                    # SPIKE TRACE for pre-synaptic spikes [== x(t) in Morrison et al 2008]
+                    pre_trace_e[m][t + 1] = pre_trace_e[m][t] + self.dt * self.neuron.spike_trace(syn='e', trace_type= 'pre',
+                                                                                                  x = pre_trace_e[m][t],
+                                                                                                  spike = self.input.stim_exc[m][t])
                     # SYNAPTIC WEIGHT
                     if w_e[m][t] < 6:
-                        w_e[m][t + 1] = w_e[m][t] + self.dt * self.neuron.STDP(pre_trace_e[m][t + 1], spike,
-                                                                               post_trace[t + 1], self.input.stim_exc[m][t])
+                        w_e[m][t + 1] = w_e[m][t] + self.dt * self.neuron.STDP('e',pre_trace_e[m][t + 1], spike,
+                                                                               post_trace[t + 1], self.input.stim_exc[m][t],m)
                     else:
                         w_e[m][t + 1] = w_e[m][t]
                     self.neuron.w_exc[m] = w_e[m][t + 1]
@@ -718,14 +792,14 @@ class Simulation:
             # Update INHIBITORY synaptic conductances and STDP
             for m in range(self.neuron.N_inh):
 
-                if self.neuron.stdp:
+                if self.neuron.stdp == self.neuron.stdp_types.BOTH.value or self.neuron.stdp == self.neuron.stdp_types.INH.value:
                     # SPIKE TRACE for pre-synaptic spikes =[x(t) in Morrison et al 2008]
-                    pre_trace_i[m][t + 1] = pre_trace_i[m][t] + self.dt * self.neuron.spike_trace('pre', pre_trace_i[m][t],
+                    pre_trace_i[m][t + 1] = pre_trace_i[m][t] + self.dt * self.neuron.spike_trace('i','pre', pre_trace_i[m][t],
                                                                                                   self.input.stim_inh[m][t])
                     # SYNAPTIC WEIGHT
                     if w_i[m][t] < 6:
-                        w_i[m][t + 1] = w_i[m][t] + self.dt * self.neuron.STDP(pre_trace_i[m][t + 1], spike,
-                                                                               post_trace[t + 1], self.input.stim_inh[m][t])
+                        w_i[m][t + 1] = w_i[m][t] + self.dt * self.neuron.STDP('i',pre_trace_i[m][t + 1], spike,
+                                                                               post_trace[t + 1], self.input.stim_inh[m][t],m)
                     else:
                         w_e[m][t + 1] = w_e[m][t]
                     self.neuron.w_inh[m] = w_e[m][t + 1]
@@ -882,6 +956,16 @@ class Simulation:
         else:
             Warning('Cannot plot CV out of a single trial')
 
+    def plotFiringRate(self,**kwargs):
+        # Plot firing rate
+        plt.plot(self.fr, color='red',lw=2)
+        plt.xlabel('Time (s)')
+        plt.ylabel('Firing rate (Hz)')
+        plt.title('Firing rate',fontweight='bold')
+        if 'show' in kwargs.keys():
+            if kwargs['show']:
+                plt.show()
+
     def plotVoltageTrace(self,**kwargs):
         fulltrace = kwargs.get('fulltrace',False)
 
@@ -911,6 +995,46 @@ class Simulation:
         if 'show' in kwargs.keys():
             if kwargs['show']:
                 plt.show()
+        return plt
+
+    def plotSynapticWeights(self,**kwargs):
+
+        syn = kwargs.get('syn',self.neuron.stdp_types.BOTH.value)
+
+        W = []
+        color = []
+        lab = []
+        if syn == self.neuron.stdp_types.BOTH.value:
+            W = [self.weights_e, self.weights_i]
+            color = ['green', 'orange']
+            lab = ['Excitatory', 'Inhibitory']
+        elif syn == self.neuron.stdp_types.EXC.value:
+            W = [self.weights_e]
+            color = ['green']
+            lab = ['Excitatory']
+        elif syn == self.neuron.stdp_types.INH.value:
+            W = [self.weights_i]
+            color = ['orange']
+            lab = ['Inhibitory']
+
+        for i,weights in enumerate(W):
+            if weights.any():
+                # Plot synaptic weights
+                for w in weights:
+                    plt.plot(self.simtime / 1000, w, color=f'tab:{color[i]}')
+
+                if 'avg' in kwargs.keys():
+                    if kwargs['avg']:
+                        plt.plot(self.simtime / 1000, np.mean(weights, 0), color=color[i], lw=5,label=lab[i])
+
+                plt.xlabel('Time (s)')
+                plt.ylabel('Synaptic Weights')
+                # plt.legend()
+
+        if 'show' in kwargs.keys():
+            if kwargs['show']:
+                plt.show()
+
         return plt
 
     def print_sim_parameters(self):
@@ -955,7 +1079,6 @@ Firing rate         =  {self.firingRate} Hz
 Average ISI         =  {self.meanISI} ms 
 CV                  =  {self.CV}  
 """)
-
 
     def saveInputParameters(self,file):
         with open(file,'w') as f:
