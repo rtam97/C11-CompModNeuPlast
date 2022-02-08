@@ -375,7 +375,7 @@ class Stimulus:
                 sys.exit('Must define type of synapses to create inputs for')
 
             if N > 0:
-                stim, stimtimes, stimindices = self.__make_stimulus(generate_stimulus, rate, N)
+                stim, stimtimes = self.__make_stimulus(generate_stimulus, rate, N)
 
                 # Assign stimulus to correct attribute
                 if syntype == 'e':
@@ -407,118 +407,21 @@ class Stimulus:
         # IF UNCORRELATED
         if self.corr_type == self.CorrType.NONE.value:
             stimulus = [func(rate[n]) for n in range(N)]
-            stimindices = [stimulus[i][2] for i in range(N)]
+            # stimindices = [stimulus[i][2] for i in range(N)]
             stimtimes   = [stimulus[i][1] for i in range(N)]
             stim        = [stimulus[i][0] for i in range(N)]
         elif self.corr_type == self.CorrType.INSTANTANEOUS.value:
             stimulus = self.__correlate_poisson(rate,N)
-            stimindices = [stimulus[2][i] for i in range(N)]
+            # stimindices = [stimulus[2][i] for i in range(N)]
             stimtimes   = [stimulus[1][i] for i in range(N)]
             stim        = [stimulus[0][i] for i in range(N)]
         elif self.corr_type == self.CorrType.EXPONENTIAL.value:
             stimulus = self.__correlate_poisson(rate,N)
-            stimindices = [stimulus[2][i] for i in range(N)]
+            # stimindices = [stimulus[2][i] for i in range(N)]
             stimtimes   = [stimulus[1][i] for i in range(N)]
             stim        = [stimulus[0][i] for i in range(N)]
 
-        return stim,stimtimes,stimindices
-
-    def __create_stimuli_old(self):
-
-        if self.type == self.StimulusType.CONSTANT.value:
-
-            self.__generate_constant_stimulus()
-
-        elif self.type == self.StimulusType.PERIODIC.value or self.type == self.StimulusType.POISSON.value:
-
-            self.I_ext = 0.0
-
-            for syntype in ['e','i']:
-
-                # Check synapse type
-                if syntype == 'e':
-                    N = self.neuron.N_exc
-                    rate = self.rate_exc
-                    name = ['RATE_EXC', 'N_EXC']
-                elif syntype == 'i':
-                    N = self.neuron.N_inh
-                    rate = self.rate_inh
-                    name = ['RATE_INH', 'N_INH']
-                else:
-                    sys.exit('Must define type of synapses to create inputs for')
-
-                # Create stimulus
-                stim = []
-                stimtimes = []
-
-                # If rate is a list
-                if isinstance(rate, list):
-
-                    # If the list is as long as the number of synapses
-                    if len(rate) == N:
-
-                        # Periodic stimulus
-                        if self.type == self.StimulusType.PERIODIC.value:
-                            stim = [self.__generate_periodic_stimulus(rate[n]) for n in range(N)]
-                            stimindices = [stim[i][2] for i in range(N)]
-                            stimtimes = [stim[i][1] for i in range(N)]
-                            stim = [stim[i][0] for i in range(N)]
-
-                        # Poisson stimulus
-                        else:
-                            stim = [self.__generate_poisson_stimulus(rate[n]) for n in range(N)]
-                            stimindices = [stim[i][2] for i in range(N)]
-                            stimtimes = [stim[i][1] for i in range(N)]
-                            stim = [stim[i][0] for i in range(N)]
-
-
-                    # If the list contains only 1 value
-                    elif len(rate) == 1:
-
-                        # Periodic stimulus
-                        if self.type == self.StimulusType.PERIODIC.value:
-                            stim = [self.__generate_periodic_stimulus(rate[0])] * N
-                            stimindices = [stim[i][2] for i in range(N)]
-                            stimtimes = [stim[i][1] for i in range(N)]
-                            stim = [stim[i][0] for i in range(N)]
-                        # Poisson stimulus
-                        else:
-                            stim = [self.__generate_poisson_stimulus(rate[0]) for s in range(N)]
-                            stimindices = [stim[i][2] for i in range(N)]
-                            stimtimes = [stim[i][1] for i in range(N)]
-                            stim = [stim[i][0] for i in range(N)]
-
-                    # No other options
-                    else:
-                        sys.exit(f'Error: if {name[0]} is a LIST its length must be equal to {name[1]} or equal to 1')
-
-                # If list is an integer
-                elif isinstance(rate, int):
-
-                    # Periodic stimulus
-                    if self.type == self.StimulusType.PERIODIC.value:
-                        stim = [self.__generate_periodic_stimulus(rate)] * N
-                        stimtimes = [stim[i][1] for i in range(N)]
-                        stim = [stim[i][0] for i in range(N)]
-                    # Poisson stimulus
-                    else:
-                        stim = [self.__generate_poisson_stimulus(rate) for s in range(N)]
-                        stimtimes = [stim[i][1] for i in range(N)]
-                        stim = [stim[i][0] for i in range(N)]
-                else:
-                    sys.exit(f"Error: {name[0]} must be either INT or LIST")
-
-                # Assign stimulus to correct attribute
-                if syntype == 'e':
-                    self.stim_exc = stim
-                    self.stim_exc_times = stimtimes
-                elif syntype == 'i':
-                    self.stim_inh = stim
-                    self.stim_inh_times = stimtimes
-                else:
-                    sys.exit('no buono')
-        else:
-            sys.exit("Error: stimulus type must be one of: 'constant', 'sinusoidal', 'periodic', 'poisson' ")
+        return stim,stimtimes # ,stimindices
 
     def __generate_constant_stimulus(self):
 
