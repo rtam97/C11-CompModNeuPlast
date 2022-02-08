@@ -47,7 +47,20 @@ And many more to come!
 
 ## 📂 results
 
-In this directory are all the figures generated with the scripts in the folder exercises.
+In this directory are all the [results](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/results) generated with the scripts in the folder exercises, as well as their descriptions.
+
+## Go to:
+
+[Chapter 1 : Leaky Integrate-and-Fire](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/results/unit1)
+
+[Chapter 2 : Adaptations in Spiking Behavior](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/results/unit2)
+
+[Chapter 3 : Spike-Timing Dependent Plasticity](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/results/unit3)
+
+[Chapter 4: Synaptic Homeostasis](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/results/unit4)
+
+[Chapter 5: Short-Term Plasticity](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/results/unit5)
+
 
 # 
 
