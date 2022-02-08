@@ -1103,6 +1103,15 @@ class Simulation:
 
         return plt
 
+    def plotInputCurrent(self,**kwargs):
+        plt.plot(self.simtime/1000,self.input.stim_const,lw=2,color='red')
+        plt.xlabel('Time (s)')
+        plt.ylabel('Current (nA)')
+        if 'show' in kwargs.keys():
+            if kwargs['show']:
+                plt.show()
+        return plt
+
     def print_sim_parameters(self):
         print(f"""
 # ----------- NEURON PARAMETERS ----------- #')
