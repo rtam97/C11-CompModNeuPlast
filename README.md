@@ -136,7 +136,7 @@ sim.plotVoltageTrace(show=True)
 ```
 
 <p align="center"> 
-<img src="results/00_tutorial.png" alt="equal weights" width="700"/>
+<img src="results/00_tutorial.png" alt="equal weights" width="400"/>
 </p>
 
 
