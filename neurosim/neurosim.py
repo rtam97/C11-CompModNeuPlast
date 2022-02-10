@@ -48,7 +48,7 @@ class Neuron:
         self.tau_rp = kwargs.get('tau_rp',50)
 
         # Spike-Timing Dependend Plasticity EXCITATORY
-        self.stdp = kwargs.get('stdp', self.stdp_types.BOTH.value)
+        self.stdp = kwargs.get('stdp', self.stdp_types.NONE.value)
         self.tau_ltp_e = kwargs.get('tau_ltp_e', 17)
         self.tau_ltd_e = kwargs.get('tau_ltd_e', 34)
 
@@ -348,6 +348,7 @@ Synaptic strength    (w_inh) :  {self.w_inh}
         EXC = 'e'
         INH = 'i'
         BOTH = 'both'
+        NONE = 'none'
 
 # ------------------------------- STIMULUS ----------------------------------- #
 
@@ -831,9 +832,13 @@ class Simulation:
                 print(f'\r{round(self.simtime[t],1)/1000} / {self.t_sim/1000} s',end='')
 
             # Post-synaptic spike trace for STDP [== y(t) in Morrison et al, 2008]
-            if self.neuron.stdp:
+            if self.neuron.stdp == 'both' or self.neuron.stdp == 'e' or self.neuron.stdp == 'i':
                 post_trace[t + 1] = post_trace[t] + self.dt * self.neuron.spike_trace(syn='both', trace_type='post',
                                                                                       x = post_trace[t], spike = spike)
+            elif self.neuron.stdp == 'none':
+                pass
+            else:
+                sys.exit('Wrong STDP choice')
 
             # Update EXCITATORY synaptic conductances and STDP
             for m in range(self.neuron.N_exc):
@@ -961,10 +966,12 @@ class Simulation:
         for trial in range(trials):
 
             if np.mod(trial,1) == 0:
-                print('%s / %s '%(trial+1,trials))
+                print('\n%s / %s '%(trial+1,trials))
 
             # Create new inputs with same parameters for each trials except 1st
             if trial != 0:
+                self.input.neuron.used_exc = 0
+                self.input.neuron.used_inh = 0
                 stim_args = vars(self.input)
                 self.input = Stimulus(stim_type=self.input.type,**stim_args)
 

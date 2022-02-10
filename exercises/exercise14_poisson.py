@@ -25,7 +25,7 @@ sim = Simulation(neuron=lif,stimulus=stim,dt=0.1)
 
 
 # Run multi-trial situation
-sim.simulate(trials=50)
+sim.simulate(trials=5)
 
 
 # Plot voltage (last trial only)
