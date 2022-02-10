@@ -28,15 +28,17 @@
 [3.3 Correlation and STDP](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/results/unit3/README.md)
 
 
-## [Chapter 4: Synaptic Homeostasis](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/results/unit4/README.md#chapter-4)
+## Chapter 4: Synaptic Homeostasis
 
-[4.1 Synaptic Normalization](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/results/unit4/README.md)
+4.1 Synaptic Normalization
 
-[4.2 Intrinsic Plasticity](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/results/unit4/README.md)
+4.2 Intrinsic Plasticity
+
+## Chapter 5: Short-Term Plasticity
+
+5.1 Short-Term Facilitation (STF)
+
+5.2 Short-Term Depression (STD)
 
 
-## [Chapter 4: Short-Term Plasticity](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/results/unit5/README.md#chapter-5)
 
-[5.1 Short-Term Facilitation (STF)](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/results/unit5/README.md)
-
-[5.2 Short-Term Depression (STD)](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/results/unit5/README.md)
