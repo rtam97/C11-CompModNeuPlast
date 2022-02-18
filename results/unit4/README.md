@@ -4,6 +4,8 @@
 
 ## 4.1 Synaptic Normalization
 
+In this exercise I implemented the homeostatic mechanism of synaptic normalization. 
+
 ## 4.2 Intrinsic Plasticity
 
 # Go back to:

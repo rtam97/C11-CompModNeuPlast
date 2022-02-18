@@ -25,7 +25,7 @@ sim = Simulation(neuron=lif,stimulus=stim,dt=0.1)
 
 
 # Run multi-trial situation
-sim.simulate(trials=5)
+sim.simulate(trials=50)
 
 
 # Plot voltage (last trial only)
@@ -126,7 +126,7 @@ for i,w_e in enumerate(weights):
     # endregion
 
     # Save single-trial-plot for the current weight
-    plt.savefig('../results/temp/weight%s.png'%(int(w_e*100)))
+    # plt.savefig('../results/temp/weight%s.png'%(int(w_e*100)))
     # plt.show()
 
 
@@ -156,5 +156,5 @@ ax2.set_xticks(weights)
 plt.legend(loc='upper right')
 
 plt.title('CV and Spikes given W_ex',fontweight='bold')
-plt.savefig('results/temp/final_exercise14_03.png')
+# plt.savefig('results/temp/final_exercise14_03.png')
 plt.show()

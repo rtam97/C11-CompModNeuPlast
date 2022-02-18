@@ -71,6 +71,11 @@ class Neuron:
             self.A_ltp_i = 0
             self.A_ltd_i = 0
 
+        # Synaptic normalization
+        self.normalize  = kwargs.get('normalize',self.stdp_types.NONE.value)
+        self.eta        = kwargs.get('eta',20)
+        self.W_tot      = kwargs.get('W_tot',3)
+        self.t_norm     = kwargs.get('t_norm', 10000) # 1 sec default
 
         synaptic_args = ['E_exc', 'w_exc', 'tau_e', 'A_ltp_e', 'A_ltd_e',
                          'E_inh', 'w_inh', 'tau_i', 'A_ltp_i', 'A_ltd_i']
@@ -165,7 +170,7 @@ class Neuron:
                 self.w_exc = self.w_exc + [0.5] * N
 
 
-            print('\n%s Excitatory synapses were added'%N)
+            # print('\n%s Excitatory synapses were added'%N)
 
         elif type == 'I':
 
@@ -202,7 +207,7 @@ class Neuron:
             else:
                 self.w_inh = self.w_inh + [0.5] * N
 
-            print('\n%s Inhibitory synapses were added'%N)
+            # print('\n%s Inhibitory synapses were added'%N)
 
         else:
             sys.exit('\nWARNING: \nSynapses must be either \n\tE -> Excitatory\n\tI -> Inhibitory')
@@ -319,6 +324,16 @@ class Neuron:
 
         return  -x / tau + (1-x)*spike - x*antispike
 
+    def synaptic_normalization(self,syn,w):
+
+        sumweights=0
+        if syn == self.stdp_types.EXC.value:
+            sumweights = np.sum(self.w_exc)
+        elif syn == self.stdp_types.INH.value:
+            sumweights = np.sum(self.w_inh)
+
+        return w*(1+self.eta*(self.W_tot/sumweights - 1))
+
     # Print parameters of neuron and synapses
     def print_neuron_info(self):
 
@@ -426,7 +441,7 @@ class Stimulus:
                 name = ['RATE_EXC', 'N_EXC']
             elif syntype == 'i':
                 N = self.neuron.N_inh
-                to_add = self.S_e
+                to_add = self.S_i
                 rate = self.rate_inh
                 used = self.neuron.used_inh
                 name = ['RATE_INH', 'N_INH']
@@ -708,14 +723,26 @@ class Simulation:
         if isinstance(self.input,list) and len(self.input) > 1:
 
             new_input = self.input[0]
+            tmp_input_e = []
+            tmp_times_e = []
 
+            tmp_input_i = []
+            tmp_times_i = []
 
-            self.stim_group_boundary = len(self.input[0].stim_exc)-1
-            new_input.stim_exc = self.input[0].stim_exc + self.input[1].stim_exc
-            new_input.stim_exc_times = self.input[0].stim_exc_times + self.input[1].stim_exc_times
+            self.stim_group_boundaries = len(self.input[0].stim_exc) - 1
 
-            new_input.stim_inh = self.input[0].stim_inh + self.input[1].stim_inh
-            new_input.stim_inh_times = self.input[0].stim_inh_times + self.input[1].stim_inh_times
+            for i in range(len(self.input)):
+                tmp_input_e = tmp_input_e + self.input[i].stim_exc
+                tmp_times_e = tmp_times_e + self.input[i].stim_exc_times
+
+                tmp_input_i = tmp_input_i + self.input[i].stim_inh
+                tmp_times_i = tmp_times_i + self.input[i].stim_inh_times
+
+            new_input.stim_exc = tmp_input_e
+            new_input.stim_exc_times = tmp_times_e
+
+            new_input.stim_inh = tmp_input_i
+            new_input.stim_inh_times = tmp_times_i
 
             if self.input[0].t_0 == self.input[1].t_0 and self.input[0].t_sim == self.input[1].t_sim and self.input[0].dt == self.input[1].dt:
                 new_input.t_0 = self.input[0].t_0
@@ -812,6 +839,9 @@ class Simulation:
         w_e = self.weights_e
         w_i = self.weights_i
 
+        self.weights_sum = np.zeros(len(self.simtime))
+        self.normfact = np.zeros(len(self.simtime))
+
         # Counters
         spikeCount = 0
         scIst = 0
@@ -828,8 +858,11 @@ class Simulation:
         # Integration loop
         for t in range(len(self.simtime) - 1):
 
-            if np.mod(round(self.simtime[t],1),1000) == 0:
+            # Print elapsed simulation time
+            if np.mod(round(self.simtime[t],1),1000) == 0 and self.trials == 1:
                 print(f'\r{round(self.simtime[t],1)/1000} / {self.t_sim/1000} s',end='')
+
+
 
             # Post-synaptic spike trace for STDP [== y(t) in Morrison et al, 2008]
             if self.neuron.stdp == 'both' or self.neuron.stdp == 'e' or self.neuron.stdp == 'i':
@@ -840,21 +873,31 @@ class Simulation:
             else:
                 sys.exit('Wrong STDP choice')
 
+            # print(np.sum([w[t] for w in w_e]))
+            self.weights_sum[t] = (np.sum([w[t] for w in w_e]))
+            self.normfact[t] = (1 + self.neuron.eta*(self.neuron.W_tot/self.weights_sum[t] -1))
+
             # Update EXCITATORY synaptic conductances and STDP
             for m in range(self.neuron.N_exc):
+
+                # Synaptic Normalization
+                if np.mod(round(self.simtime[t], 1), self.neuron.t_norm) == 0 and t != 0:
+                    if (self.neuron.normalize == self.neuron.stdp_types.EXC.value
+                            or self.neuron.normalize == self.neuron.stdp_types.BOTH.value):
+                        w_e[m][t] = self.neuron.synaptic_normalization('e', w_e[m][t])
 
                 if self.neuron.stdp == self.neuron.stdp_types.BOTH.value or self.neuron.stdp == self.neuron.stdp_types.EXC.value:
                     # SPIKE TRACE for pre-synaptic spikes [== x(t) in Morrison et al 2008]
                     pre_trace_e[m][t + 1] = pre_trace_e[m][t] + self.dt * self.neuron.spike_trace(syn='e', trace_type= 'pre',
                                                                                                   x = pre_trace_e[m][t],
                                                                                                   spike = self.input.stim_exc[m][t])
-                    # SYNAPTIC WEIGHT
-                    if w_e[m][t] < 6:
+                    # STDP
+                    if 6 > w_e[m][t] > 0:
                         w_e[m][t + 1] = w_e[m][t] + self.dt * self.neuron.STDP('e',pre_trace_e[m][t + 1], spike,
                                                                                post_trace[t + 1], self.input.stim_exc[m][t],m)
                     else:
                         w_e[m][t + 1] = w_e[m][t]
-                    self.neuron.w_exc[m] = w_e[m][t + 1]
+                self.neuron.w_exc[m] = w_e[m][t + 1]
 
                 # CONDUCTANCE
                 g_ex[m][t + 1] = g_ex[m][t] + self.dt * self.neuron.synapse('e', g_ex[m][t], t, self.input, m)
@@ -868,12 +911,20 @@ class Simulation:
                     pre_trace_i[m][t + 1] = pre_trace_i[m][t] + self.dt * self.neuron.spike_trace('i','pre', pre_trace_i[m][t],
                                                                                                   self.input.stim_inh[m][t])
                     # SYNAPTIC WEIGHT
-                    if w_i[m][t] < 6:
+
+                    # Synaptic Normalization
+                    if np.mod(round(self.simtime[t], 1), 1000) == 0 and t != 0:
+                        if (self.neuron.normalize == self.neuron.stdp_types.INH.value
+                                or self.neuron.normalize == self.neuron.stdp_types.BOTH.value):
+                            w_i[m][t+1] = self.neuron.synaptic_normalization('i', w_i[m][t])
+
+                    # STDP
+                    if 6 > w_i[m][t]:
                         w_i[m][t + 1] = w_i[m][t] + self.dt * self.neuron.STDP('i',pre_trace_i[m][t + 1], spike,
                                                                                post_trace[t + 1], self.input.stim_inh[m][t],m)
                     else:
                         w_e[m][t + 1] = w_e[m][t]
-                    self.neuron.w_inh[m] = w_e[m][t + 1]
+                self.neuron.w_inh[m] = w_e[m][t + 1]
 
                 # CONDUCTANCE
                 g_in[m][t + 1] = g_in[m][t] + self.dt * self.neuron.synapse('i', g_in[m][t], t, self.input, m)
@@ -938,6 +989,7 @@ class Simulation:
         self.g_sra = g_sra
         self.weights_e = w_e
         self.weights_i = w_i
+        self.weights_sum[-1] = self.weights_sum[-2]
         self.fr = fr
         self.spikeCount = spikeCount
         self.spikeTimes = spikeTimes
@@ -1031,7 +1083,7 @@ class Simulation:
 
     def plotFiringRate(self,**kwargs):
         # Plot firing rate
-        plt.plot(self.fr, color='red',lw=2)
+        plt.plot(self.fr[1:], color='red',lw=2)
         plt.xlabel('Time (s)')
         plt.ylabel('Firing rate (Hz)')
         plt.title('Firing rate',fontweight='bold')

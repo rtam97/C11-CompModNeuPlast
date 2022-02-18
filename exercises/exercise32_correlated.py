@@ -5,7 +5,7 @@ from matplotlib import rcParams
 
 # -------------------- PARAMETERS -------------------- #
 # Figure 1          # Figure 2
-corr = 'exp'       # 'exp'
+corr = 'inst'       # 'exp'
 
 # -------------------- NEURON -------------------- #
 

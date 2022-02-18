@@ -6,7 +6,7 @@ from numpy import mean
 # Change to obtain :        # Figure 1      # Figure 2      # Figure 3      # Figure 4      # Figure 5      # Figure 6      #       # Figure 7          #       # Figure 8          #       # Figure 9          #       # Figure 10         #       # Figure 11         #       # Figure 12         #       # Figure 13         #
 c1   = 0.1                  #   0.1         |   0.1         |   0.1         |   0.1         |   0.1         |   0.1         |           0.1             |           0.1             |           0.1             #           0.1             |           0.1             |           0.1             |           0.1             #
 c2   = 0.1                  #   0.1         |   0.2         |   0.5         |   0.1         |   0.2         |   0.5         |           0.1             |           0.2             |           0.5             #           0.1             |           0.2             |           0.5             |           0.9             #
-c    = 'exp'               #  'inst'       |  'inst'       |  'inst'       |  'exp'        |  'exp'        |  'exp'        |          'inst'           |          'inst'           |          'inst'           #          'exp'            |          'exp'            |          'exp'            |          'exp'            #
+c    = 'inst'               #  'inst'       |  'inst'       |  'inst'       |  'exp'        |  'exp'        |  'exp'        |          'inst'           |          'inst'           |          'inst'           #          'exp'            |          'exp'            |          'exp'            |          'exp'            #
 we   = 0.5                  #   0.5         |   0.5         |   0.5         |   0.5         |   0.5         |   0.5         |   [1.0]*10 + [0.5]*10     |   '[1.0]*10 + [0.5]*10'   |   '[1.0]*10 + [0.5]*10'   #   [1.0]*10 + [0.5]*10     |   '[1.0]*10 + [0.5]*10'   |   '[1.0]*10 + [0.5]*10'   |   '[1.0]*10 + [0.5]*10'   #
 fign = '01'
 t_sim = 30000
@@ -64,17 +64,17 @@ plt.show()
 
 
 # Plot group 1
-for w in range(sim.stim_group_boundary):
+for w in range(sim.stim_group_boundaries):
     plt.plot(sim.simtime/1000,sim.weights_e[w],color='tab:green')
 
 # Plot group 1
-for w in range(sim.stim_group_boundary,len(sim.weights_e)):
+for w in range(sim.stim_group_boundaries, len(sim.weights_e)):
     plt.plot(sim.simtime/1000,sim.weights_e[w],color='tab:purple')
 
 # Plot averages
 sim.plotSynapticWeights(syn='i',avg=True)
-plt.plot(sim.simtime/1000,mean(sim.weights_e[:sim.stim_group_boundary-1],axis=0),color="green", lw=5 , label=f'Excitatory (c : {c1})')
-plt.plot(sim.simtime/1000,mean(sim.weights_e[sim.stim_group_boundary:],axis=0),color="purple", lw=5 ,  label=f'Excitatory (c : {c2})')
+plt.plot(sim.simtime / 1000, mean(sim.weights_e[:sim.stim_group_boundaries - 1], axis=0), color="green", lw=5, label=f'Excitatory (c : {c1})')
+plt.plot(sim.simtime / 1000, mean(sim.weights_e[sim.stim_group_boundaries:], axis=0), color="purple", lw=5, label=f'Excitatory (c : {c2})')
 
 # Labels
 plt.title(f'Weight evolution - {tit}',fontweight='bold')
