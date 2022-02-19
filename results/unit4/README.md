@@ -39,12 +39,16 @@ Thus, we would expect the neuron to decrease all of its weights in order to brin
 This is indeed occurring every time (`t_norm = 1 sec`) that the weights are normalized. 
 
 However, given the initial synaptic weights, the large number of correlated excitatory inputs, as well 
-as the slow normalization time step, _STDP is able to counter-balance the normalization_ by growing the weights just enough
-so that the at each normalization step the weights are lowered back by roughly the same amount they were increased. 
+as the slow normalization time step, we see that _STDP is able to counter-balance the normalization_ by growing the weights just enough
+so that the at each normalization step the weights are lowered back by roughly the same amount they were increased by STDP (**mid-left panel**). 
 
-This is reflected by the instantaneous firing rate, which if fairly stable around 40 Hz.
+This is reflected by the instantaneous firing rate, which if fairly stable around 40 Hz (**top-left panel**).
 
-If we then look at the distribution of excitatory weights over time (bottom left - right panels), we see an interesting pattern. 
+<p align="center"> 
+<img src="exercise41_01_inst_3.png" alt="instantaneous correlation STDP normalization"/>
+</p>
+
+If we then look at the distribution of excitatory weights over time (**bottom left panel | right panels**), we see an interesting pattern. 
 In the first `~20 s`, the two groups of stimuli are equally competing for synaptic resources of the post-synaptic neuron. 
 
 However, as the neuron receives more and more highly-correlated spikes from `Group 2`, the weights for `Group 2` are increased 
@@ -57,9 +61,7 @@ This shows how synaptic normalization coupled to STDP will lead a neuron to prun
 inputs in favor of 'more relevant' (more correlated) inputs, in the biologically realistic case of having limited resources 
 to allocate towards synaptic connectivity.
 
-<p align="center"> 
-<img src="exercise41_01_inst_3.png" alt="instantaneous correlation STDP normalization"/>
-</p>
+
 
 ### Experiment 2
 
@@ -79,6 +81,15 @@ slightly above the total allowed sum of excitatory weights (**mid-left panel**).
 <img src="exercise41_02_exp_3.png" alt="exponential correlation STDP normalization"/>
 </p>
 
+### Experiment 3
+
+Here the correlation was instantaneous (`corr_type = 'inst'`) and the allowed sum of weights was increased to `W_tot = 13`.
+
+The idea behind increasing the allowed total weight was that, if the sum of the initial weights was smaller, then the weights would only grow until the maximum is reached and stop. 
+
+This, however was an erroneous idea. In fact, while the sum of weights did indeed grow until `W_tot` was reached, it did not stop growing once it did. Instead it kept increasing until it stabilized at ~35, which lead to a quite high firing rate of ~125 Hz. 
+
+This happened because the initial weights, as in Experiment 1, were already quite high (`sum(w)=10`) and, given that the maximum allowed weight
 
 ## 4.2 Intrinsic Plasticity
 
