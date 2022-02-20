@@ -5,16 +5,16 @@ import numpy as np
 
 # ----------------  PARAMETERS ---------------- #
 
-# Parameters
-c1 = 0.1
-c2 = 0.2
-t_sim = 100000
-Ne = 100
-Ni = 30
-rate = 10
-corr = 'inst'
-wtot = 3
-fn = '01'
+# Parameters        # FIGURE 1      # FIGURE 2      # FIGURE 3      # FIGURE 4
+c1 = 0.1            #               #               #               #
+c2 = 0.2            #               #               #               #
+t_sim = 100000      #               #               #               #
+Ne = 100            #               #               #               #
+Ni = 30             #               #               #               #
+rate = 10           #               #               #               #
+corr = 'inst'       # 'inst'        #   'exp'       #   'inst'      #   'exp'
+wtot = 3            #   3           #     3         #     13        #     13
+fn = '01'           #   '01         #    '02'       #    '03'       #    '04'
 
 rcParams['figure.figsize'] = (16,12)
 
@@ -153,41 +153,41 @@ for i,t in enumerate([zero, quart, thrq, full]):
 
 plt.show()
 
-# ------------------- PLOT ANIMATION ------------------- #
-from celluloid import Camera
-
-rcParams['figure.figsize'] = (8,6)
-
-fig = plt.figure()
-camera = Camera(fig)
-
-beans = 3
-
-for t in range(0,len(sim.simtime),50000):
-    plt.text(0.6,40,f't = {int(sim.simtime[t]/1000)} s',fontweight='bold')
-    plt.hist([x[t] for x in sim.weights_e[sim.stim_group_boundaries + 1:]],
-             color='purple', alpha=0.2, edgecolor='purple', bins=beans)
-
-    plt.hist([x[t] for x in sim.weights_e[sim.stim_group_boundaries + 1:]],
-             color='purple', fill=False, lw=2, edgecolor='purple',
-             label=f'Group 2 (c : {c2})', bins=beans)
-
-    plt.hist([x[t] for x in sim.weights_e[:sim.stim_group_boundaries + 1]],
-             color='green', alpha=0.2, edgecolor='green', bins=beans)
-
-    plt.hist([x[t] for x in sim.weights_e[:sim.stim_group_boundaries + 1]],
-             color='green', fill=False, lw=2, edgecolor='green',
-             label=f'Group 1 (c : {c1})', bins=beans)
-    camera.snap()
-
-
-plt.ylabel('Frequency')
-plt.xlabel('Synaptic weight')
-
-camera.snap()
-animation = camera.animate()
-
-# animation.save(f'../results/exercise41_{fn}_{Ne}e_{Ni}i_{rate}Hz_{int(t_sim/1000)}s_wtot{wtot}_{corr}.gif')
-
-
-
+# # ------------------- PLOT ANIMATION ------------------- #
+# from celluloid import Camera
+#
+# rcParams['figure.figsize'] = (8,6)
+#
+# fig = plt.figure()
+# camera = Camera(fig)
+#
+# beans = 3
+#
+# for t in range(0,len(sim.simtime),50000):
+#     plt.text(0.6,40,f't = {int(sim.simtime[t]/1000)} s',fontweight='bold')
+#     plt.hist([x[t] for x in sim.weights_e[sim.stim_group_boundaries + 1:]],
+#              color='purple', alpha=0.2, edgecolor='purple', bins=beans)
+#
+#     plt.hist([x[t] for x in sim.weights_e[sim.stim_group_boundaries + 1:]],
+#              color='purple', fill=False, lw=2, edgecolor='purple',
+#              label=f'Group 2 (c : {c2})', bins=beans)
+#
+#     plt.hist([x[t] for x in sim.weights_e[:sim.stim_group_boundaries + 1]],
+#              color='green', alpha=0.2, edgecolor='green', bins=beans)
+#
+#     plt.hist([x[t] for x in sim.weights_e[:sim.stim_group_boundaries + 1]],
+#              color='green', fill=False, lw=2, edgecolor='green',
+#              label=f'Group 1 (c : {c1})', bins=beans)
+#     camera.snap()
+#
+#
+# plt.ylabel('Frequency')
+# plt.xlabel('Synaptic weight')
+#
+# camera.snap()
+# animation = camera.animate()
+#
+# # animation.save(f'../results/exercise41_{fn}_{Ne}e_{Ni}i_{rate}Hz_{int(t_sim/1000)}s_wtot{wtot}_{corr}.gif')
+#
+#
+#
