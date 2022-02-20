@@ -78,18 +78,39 @@ slightly above the total allowed sum of excitatory weights (**mid-left panel**).
 
 
 <p align="center"> 
-<img src="exercise41_02_exp_3.png" alt="exponential correlation STDP normalization"/>
+  <img src="exercise41_02_exp_3.png" alt="exponential correlation STDP normalization"/>
 </p>
 
-### Experiment 3
+### Experiment 3 & 4
 
-Here the correlation was instantaneous (`corr_type = 'inst'`) and the allowed sum of weights was increased to `W_tot = 13`.
+The same experiments as before were performed, but this time the total allowed weight was increased to `w_tot = 13`, which is higher than the total sum of the initial weights (`sum(w) = 10`).
 
-The idea behind increasing the allowed total weight was that, if the sum of the initial weights was smaller, then the weights would only grow until the maximum is reached and stop. 
+This was done in order to see whether the weights would grow towards the maximum and then settle there, grow towards the maximum and continue growing towards a new stable point, or remain bounded under the maximum weight.
 
-This, however was an erroneous idea. In fact, while the sum of weights did indeed grow until `W_tot` was reached, it did not stop growing once it did. Instead it kept increasing until it stabilized at ~35, which lead to a quite high firing rate of ~125 Hz. 
+One would expect that the weights grow until the maximum and then plateau at that point.
 
-This happened because the initial weights, as in Experiment 1, were already quite high (`sum(w)=10`) and, given that the maximum allowed weight
+However, for both instantaneous (**left panel**) and exponential (**right panel**) correlated inputs, the weights grew towards the maximumu `W_tot` very quickly and then continued to grow further, until a further stable point was reached, much higher than the maximum allowed: ~40 for instantaneous and ~20 for exponential correlation.
+
+This can be explained by the fact that, in order to reach the maximum from below, the neuron has to increase its overall weights, on top of STDP. Therefore, once it reaches the maximum, the weights will be so high that the STDP will greatly overcome synaptic normalization, and thus the sum of weights will keep on increasing until a balance is struck.
+
+<p align="center"> 
+  <img src="exercise41_03_inst_13_sumtotl.png" alt="inst corr 13 sumttl" width="500"/>
+  <img src="exercise41_04_exp_13_sumtot.png" alt="inst corr 13 sumttl" width="500"/>
+</p>
+
+This balance is reached in a way similar as before in the instantaneous correlation condition, where the two groups initially compete, until Group 2 overrules Group 1 and drives it to extinction.
+
+Differently, in the exponential condition, it seems like the two groups are effectively competing for synaptic resources without driving one another to extinction, while still seemingly reaching a stable point.
+
+This could be due to the fact that stronger exponential correlation is not strong enough to win over a lower exponential correlation which is positively normalized at the same rate. It could also be an effect of the individual trial.
+
+More simulations should be ran to rule out this effect.
+
+<p align="center"> 
+  <img src="exercise41_03_inst_13_weights.png" alt="inst corr 13 sumttl" width="500"/>
+  <img src="exercise41_04_exp_13_weights.png" alt="inst corr 13 sumttl" width="500"/>
+</p>
+
 
 ## 4.2 Intrinsic Plasticity
 
