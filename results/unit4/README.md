@@ -45,7 +45,7 @@ so that the at each normalization step the weights are lowered back by roughly t
 This is reflected by the instantaneous firing rate, which if fairly stable around 40 Hz (**top-left panel**).
 
 <p align="center"> 
-<img src="exercise41_01_inst_3.png" alt="instantaneous correlation STDP normalization"/>
+<img src="exercise41_01_inst_3.png" alt="instantaneous correlation STDP normalization"  width="700"/>
 </p>
 
 If we then look at the distribution of excitatory weights over time (**bottom left panel | right panels**), we see an interesting pattern. 
@@ -78,7 +78,7 @@ slightly above the total allowed sum of excitatory weights (**mid-left panel**).
 
 
 <p align="center"> 
-  <img src="exercise41_02_exp_3.png" alt="exponential correlation STDP normalization"/>
+  <img src="exercise41_02_exp_3.png" alt="exponential correlation STDP normalization" width="700"/>
 </p>
 
 ### Experiment 3 & 4
