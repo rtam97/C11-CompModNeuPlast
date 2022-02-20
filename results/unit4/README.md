@@ -5,7 +5,7 @@
 ## 4.1 Synaptic Normalization
 
 In this exercise I implemented the homeostatic mechanism of synaptic normalization. Each weight for all excitatory and 
-inhibitory (separately) synapses are adjusted every `t_norm` seconds by the following multiplicative rule:
+inhibitory synapses is (separately) adjusted every `t_norm` seconds by the following multiplicative rule:
 
 `w(t+1) = w(t)*(1 + eta*(W_tot/sum(w) - 1))`
 
@@ -36,7 +36,7 @@ Because each excitatory weight is initially set to `w_exc = 0.1`, the sum of all
 is much larger than the total allowed weight (`W_tot = 3`). 
 
 Thus, we would expect the neuron to decrease all of its weights in order to bring them down to a more acceptable value. 
-This is indeed occurring every time (`t_norm = 1 sec`) that the weights are normalized. 
+This is indeed occurring every time that the weights are normalized (ie: every second). 
 
 However, given the initial synaptic weights, the large number of correlated excitatory inputs, as well 
 as the slow normalization time step, we see that _STDP is able to counter-balance the normalization_ by growing the weights just enough
