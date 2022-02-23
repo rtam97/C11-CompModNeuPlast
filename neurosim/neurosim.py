@@ -73,9 +73,14 @@ class Neuron:
 
         # Synaptic normalization
         self.normalize  = kwargs.get('normalize',self.stdp_types.NONE.value)
-        self.eta        = kwargs.get('eta',20)
+        self.eta_norm   = kwargs.get('eta_norm',20)
         self.W_tot      = kwargs.get('W_tot',3)
         self.t_norm     = kwargs.get('t_norm', 10000) # 1 sec default
+
+        # Intrinsic plasticity
+        self.ip = kwargs.get('ip',self.stdp_types.NONE.value)
+        self.eta_ip = kwargs.get('eta_ip',0)
+        self.r_target = kwargs.get('r_target',3)
 
         synaptic_args = ['E_exc', 'w_exc', 'tau_e', 'A_ltp_e', 'A_ltd_e',
                          'E_inh', 'w_inh', 'tau_i', 'A_ltp_i', 'A_ltd_i']
@@ -332,7 +337,11 @@ class Neuron:
         elif syn == self.stdp_types.INH.value:
             sumweights = np.sum(self.w_inh)
 
-        return w*(1+self.eta*(self.W_tot/sumweights - 1))
+        return w*(1+self.eta_norm*(self.W_tot/sumweights - 1))
+
+    # Intrinsic plasticity
+    def adjust_threshold(self,R):
+        return self.V_theta + self.eta_ip * (R - self.r_target)
 
     # Print parameters of neuron and synapses
     def print_neuron_info(self):
@@ -849,11 +858,14 @@ class Simulation:
         ISIs = []
         sra_end = 0
         spike = False
-        fr = []
+        # fr = []
+        fr = np.zeros(len(self.simtime))
+        theta = np.zeros(len(self.simtime))
 
         # initial value
         V[0] = self.neuron.V_init
-
+        fr[0] = 0
+        theta[0] = self.neuron.V_theta
 
         # Integration loop
         for t in range(len(self.simtime) - 1):
@@ -875,7 +887,7 @@ class Simulation:
 
             # print(np.sum([w[t] for w in w_e]))
             self.weights_sum[t] = (np.sum([w[t] for w in w_e]))
-            self.normfact[t] = (1 + self.neuron.eta*(self.neuron.W_tot/self.weights_sum[t] -1))
+            self.normfact[t] = (1 + self.neuron.eta_norm*(self.neuron.W_tot/self.weights_sum[t] -1))
 
             # Update EXCITATORY synaptic conductances and STDP
             for m in range(self.neuron.N_exc):
@@ -975,10 +987,24 @@ class Simulation:
                 g_ref[t+1] = g_ref[t] + self.dt * self.neuron.adaptation('RP',g_ref[t], spike)
 
 
+            if t != 0:
+                fr[t+1] = spikeCount / self.simtime[t] * 1000
             # Istantaneous firing rate
-            if int(np.mod(t, 10000)) == 0:
-                fr.append(scIst)
-                scIst = 0
+            # if np.mod(round(self.simtime[t],1),1000) == 0 and t != 0:
+            #     # fr.append(scIst)
+            #     # fr.append(spikeCount/ self.simtime[t]*1000)
+            #     fr[t + 1] = spikeCount / self.simtime[t] * 1000
+            #     scIst = 0
+            # elif t  == 0:
+            #     pass# fr.append(0)
+
+
+
+
+            if np.mod(round(self.simtime[t],1),1000) == 0 and self.neuron.eta_norm != 'none':
+                # self.neuron.V_theta = self.neuron.adjust_threshold(fr[-1])
+                self.neuron.V_theta = self.neuron.adjust_threshold(fr[t])
+            theta[t+1] = self.neuron.V_theta
 
 
 
@@ -996,6 +1022,7 @@ class Simulation:
         self.firingRate = spikeCount/self.t_sim*1000
         self.ISI       = ISIs
         self.outputFreq = (1/np.array(self.ISI))*1000 # Hz
+        self.theta  = theta
         if spikeTimes:
             self.outputFreq[0] = 1/(spikeTimes[0]-self.simtime[int(self.input.stim_start/self.dt)])*1000
         if len(self.ISI) > 1:
@@ -1083,7 +1110,7 @@ class Simulation:
 
     def plotFiringRate(self,**kwargs):
         # Plot firing rate
-        plt.plot(self.fr[1:], color='red',lw=2)
+        plt.plot(self.simtime/1000, self.fr, color='red',lw=2)
         plt.xlabel('Time (s)')
         plt.ylabel('Firing rate (Hz)')
         plt.title('Firing rate',fontweight='bold')

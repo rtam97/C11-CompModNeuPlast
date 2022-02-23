@@ -2,7 +2,7 @@ from neurosim.neurosim import Neuron,Stimulus,Simulation
 from matplotlib import pyplot as plt, rcParams, use
 import numpy as np
 
-
+# use('tkagg')
 # ----------------  PARAMETERS ---------------- #
 
 # Parameters        # FIGURE 1      # FIGURE 2      # FIGURE 3      # FIGURE 4
@@ -14,7 +14,7 @@ Ni = 30             #               #               #               #
 rate = 10           #               #               #               #
 corr = 'inst'       # 'inst'        #   'exp'       #   'inst'      #   'exp'
 wtot = 3            #   3           #     3         #     13        #     13
-fn = '01'           #   '01         #    '02'       #    '03'       #    '04'
+fn = '10'           #   '01         #    '02'       #    '03'       #    '04'
 
 rcParams['figure.figsize'] = (16,12)
 
@@ -32,7 +32,7 @@ lif = Neuron(type='lif',
              N_inh=Ni, w_inh=1.0,
              stdp='e',A_ltp_e=0.02, A_ltd_e=-0.01,
              normalize='e', # Synaptic normalization on excitatory synapses only
-             eta=0.2,       # Normalization rate
+             eta_norm=0.2,       # Normalization rate
              W_tot = wtot,     # Maximum allowed weight
              t_norm=1000)   # Normalization event time step (ms)
 
@@ -149,9 +149,12 @@ for i,t in enumerate([zero, quart, thrq, full]):
         plt.xlabel('Synaptic weight')
 
 
-# plt.savefig(f'../results/exercise41_{fn}_{Ne}e_{Ni}i_{rate}Hz_{int(t_sim/1000)}s_wtot{wtot}_{corr}.png')
+plt.savefig(f'../results/exercise41_{fn}_{Ne}e_{Ni}i_{rate}Hz_{int(t_sim/1000)}s_wtot{wtot}_{corr}.png')
 
 plt.show()
+
+
+sim.plotVoltageTrace(show=True)
 
 # # ------------------- PLOT ANIMATION ------------------- #
 # from celluloid import Camera
