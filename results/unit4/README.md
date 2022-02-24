@@ -1,6 +1,6 @@
 # Results
 
-# Chapter 4
+# Chapter 4 : Synaptic Homeostasis
 
 ## 4.1 Synaptic Normalization
 
