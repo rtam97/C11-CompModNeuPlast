@@ -28,7 +28,7 @@
 [3.3 Correlation and STDP](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/results/unit3/README.md)
 
 
-## Chapter 4: Synaptic Homeostasis
+## [Chapter 4: Synaptic Homeostasis](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/results/unit4/README.md)
 
 4.1 Synaptic Normalization
 
