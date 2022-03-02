@@ -3,7 +3,7 @@
 test*
 results/temp
 literature
-
+*.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

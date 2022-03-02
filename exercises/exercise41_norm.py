@@ -149,7 +149,7 @@ for i,t in enumerate([zero, quart, thrq, full]):
         plt.xlabel('Synaptic weight')
 
 
-plt.savefig(f'../results/exercise41_{fn}_{Ne}e_{Ni}i_{rate}Hz_{int(t_sim/1000)}s_wtot{wtot}_{corr}.png')
+# plt.savefig(f'../results/exercise41_{fn}_{Ne}e_{Ni}i_{rate}Hz_{int(t_sim/1000)}s_wtot{wtot}_{corr}.png')
 
 plt.show()
 

@@ -892,13 +892,10 @@ class Simulation:
             # Update EXCITATORY synaptic conductances and STDP
             for m in range(self.neuron.N_exc):
 
-                # Synaptic Normalization
-                if np.mod(round(self.simtime[t], 1), self.neuron.t_norm) == 0 and t != 0:
-                    if (self.neuron.normalize == self.neuron.stdp_types.EXC.value
-                            or self.neuron.normalize == self.neuron.stdp_types.BOTH.value):
-                        w_e[m][t] = self.neuron.synaptic_normalization('e', w_e[m][t])
 
+                # STDP
                 if self.neuron.stdp == self.neuron.stdp_types.BOTH.value or self.neuron.stdp == self.neuron.stdp_types.EXC.value:
+
                     # SPIKE TRACE for pre-synaptic spikes [== x(t) in Morrison et al 2008]
                     pre_trace_e[m][t + 1] = pre_trace_e[m][t] + self.dt * self.neuron.spike_trace(syn='e', trace_type= 'pre',
                                                                                                   x = pre_trace_e[m][t],
@@ -909,6 +906,14 @@ class Simulation:
                                                                                post_trace[t + 1], self.input.stim_exc[m][t],m)
                     else:
                         w_e[m][t + 1] = w_e[m][t]
+
+                # Synaptic Normalization
+                if np.mod(round(self.simtime[t], 1), self.neuron.t_norm) == 0 and t != 0:
+                    if (self.neuron.normalize == self.neuron.stdp_types.EXC.value
+                            or self.neuron.normalize == self.neuron.stdp_types.BOTH.value):
+                        w_e[m][t+1] = self.neuron.synaptic_normalization('e', w_e[m][t])
+
+
                 self.neuron.w_exc[m] = w_e[m][t + 1]
 
                 # CONDUCTANCE
@@ -918,24 +923,25 @@ class Simulation:
             # Update INHIBITORY synaptic conductances and STDP
             for m in range(self.neuron.N_inh):
 
+                # STDP
                 if self.neuron.stdp == self.neuron.stdp_types.BOTH.value or self.neuron.stdp == self.neuron.stdp_types.INH.value:
                     # SPIKE TRACE for pre-synaptic spikes =[x(t) in Morrison et al 2008]
                     pre_trace_i[m][t + 1] = pre_trace_i[m][t] + self.dt * self.neuron.spike_trace('i','pre', pre_trace_i[m][t],
                                                                                                   self.input.stim_inh[m][t])
-                    # SYNAPTIC WEIGHT
 
-                    # Synaptic Normalization
-                    if np.mod(round(self.simtime[t], 1), 1000) == 0 and t != 0:
-                        if (self.neuron.normalize == self.neuron.stdp_types.INH.value
-                                or self.neuron.normalize == self.neuron.stdp_types.BOTH.value):
-                            w_i[m][t+1] = self.neuron.synaptic_normalization('i', w_i[m][t])
-
-                    # STDP
                     if 6 > w_i[m][t]:
                         w_i[m][t + 1] = w_i[m][t] + self.dt * self.neuron.STDP('i',pre_trace_i[m][t + 1], spike,
                                                                                post_trace[t + 1], self.input.stim_inh[m][t],m)
                     else:
                         w_e[m][t + 1] = w_e[m][t]
+
+                # Synaptic Normalization
+                if np.mod(round(self.simtime[t], 1), 1000) == 0 and t != 0:
+                    if (self.neuron.normalize == self.neuron.stdp_types.INH.value
+                            or self.neuron.normalize == self.neuron.stdp_types.BOTH.value):
+                        w_i[m][t + 1] = self.neuron.synaptic_normalization('i', w_i[m][t])
+
+                # Update weight
                 self.neuron.w_inh[m] = w_e[m][t + 1]
 
                 # CONDUCTANCE
@@ -1276,6 +1282,30 @@ t_sim   = {self.t_sim}  # Simulation duration (ms)
 dt      = {self.dt}     # Integration time step (ms)
 """)
 
+    def save_checkpoint(self):
+        sim = vars(self)
+
+        stim = vars(self.input)
+
+        neur = vars(self.neuron)
+
+        sim['neuron'] = 'placeholder'
+
+        stim['neuron'] = 'placeholder'
+
+        sim['input'] = 'placeholder'
+
+        with open('cpt.py','w') as f:
+            f.write(f'neuron = {neur}\n\n')
+            f.write(f'stim = {stim}\n\n')
+            f.write(f'sim = {sim}\n\n')
+
+    def restore_checkpoint(self,file):
+
+        with open(file,'w') as f:
+            print(1)
+
+        print(2)
 
 
 # ------------------------------- STATS ----------------------------------- #
