@@ -1,6 +1,6 @@
 # Results
 
-# Chapter 4
+# Chapter 4 : Synaptic Homeostasis
 
 ## 4.1 Synaptic Normalization
 
@@ -113,6 +113,34 @@ More simulations should be ran to rule out this effect.
 
 
 ## 4.2 Intrinsic Plasticity
+
+In this exercise, the mechanism of intrinsic plasticity due to adaptations at the ion-channels level was implemented as an adaptive spiking threshold potential: Every second of simulation the threshold was updataded according to:
+
+`V_theta[t+1] = V_theta[t] + eta_IP * (R[t] - R_target)`
+
+Where `R[t]` is the time-varying instantaneous firing rate, `R_target` is the target firing rate, set here to `3 Hz`, and `eta_IP` is the learning rate, here set to `0.1`. 
+
+___
+
+A leaky integrate and fire neuron was simulated with `Ne = 10` excitatory inputs, 5 of which where correlated _instantaneously_ with `c1 = 0.1` and the other 5 again with `c2 = 0.1`. All 10 synapses had an initial strength of `w_exc = 0.35` and were subjected to STDP with `A_ltp = 0.001` and `A_ltd = -0.0005`, but without any synaptic normalization. 10 uncorrelated inihibitory synapses with `w_inh = 1.0` were included, but did not undergo any kind of synaptic plasticity.
+
+The neuron was simulated for `t_sim = 100 s` and the synaptic weights, spiking threshold, and firing rate across time were kept track of and plotted.
+
+<p align="center"> 
+  <img src="exercise42_03.png"/>
+</p>
+
+
+As can be seen from the graph, because of the intrinsic plasticity, the firing rate grows to a stable point, close to the target rate of 3 Hz. This is achieved by the spiking threshold decreasing in the first 40 seconds of simulation, in order to accomodate the fairly low synaptic weights at the start. After 40 seconds, however, the weights have grown enough due to STDP that, if the spiking threshold were to stay fixed, the firing rate of the neuron would quickly blow up. Therefore, to keep teh firing rate stable, the spiking threshold was raised again.
+
+___
+
+A very similar pattern was observed when the two input groups had different correlation `c1 = 0.1` and `c2 = 0.2`, with the only difference being that the weights of group 2 grew faster, and most likely contributed more greatly to the overall plasticity.
+
+<p align="center"> 
+  <img src="exercise42_02.png"/>
+</p>
+
 
 # Go back to:
 
