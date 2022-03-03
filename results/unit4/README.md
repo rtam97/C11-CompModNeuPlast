@@ -144,6 +144,7 @@ A very similar pattern was observed when the two input groups had different corr
 <p align="center"> 
   <img src="exercise42_1000s_osc.png"/></br>
   <img src="exercise42_4000s.png"/></br>
+  <img src="exercise42_4000s_ext.png"/></br>
 </p>
 
 
