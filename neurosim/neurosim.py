@@ -82,6 +82,14 @@ class Neuron:
         self.eta_ip = kwargs.get('eta_ip',0)
         self.r_target = kwargs.get('r_target',3)
 
+
+        # Short-Term Facilitation
+        self.stf = kwargs.get('stf',self.stdp_types.NONE.value)
+        self.U_stf = kwargs.get('U_stf',0.2)
+        self.tau_stf = kwargs.get('tau_stf',50)
+        self.w_fixed = kwargs.get('w_fixed',self.w_exc)
+        self.w_affected = kwargs.get('w_affected',np.linspace(1,self.N_exc,self.N_exc)-1)
+
         synaptic_args = ['E_exc', 'w_exc', 'tau_e', 'A_ltp_e', 'A_ltd_e',
                          'E_inh', 'w_inh', 'tau_i', 'A_ltp_i', 'A_ltd_i']
 
@@ -343,6 +351,10 @@ class Neuron:
     def adjust_threshold(self,R):
         return self.V_theta + self.eta_ip * (R - self.r_target)
 
+    # STF
+    def short_term_facilitation(self,u,spike):
+        return -u/self.tau_stf + self.U_stf * (1-u) * spike
+
     # Print parameters of neuron and synapses
     def print_neuron_info(self):
 
@@ -545,7 +557,7 @@ class Stimulus:
 
             #
             # Find time indexes of stimulus end (depends on stim_length)
-            stim_end_idx = [x + stim_length_idx for x in stim_start_idx]
+            stim_end_idx = [x + stim_length_idx+1 for x in stim_start_idx]
 
             # Create range of indexes for stimulus duration
             for i, x in enumerate(stim_start_idx):
@@ -567,7 +579,7 @@ class Stimulus:
         stimidx = []
         for t in range(len(self.time)):
             if rate * self.dt / 1000 > np.random.random() and stimulus[t] != 1:
-                stimulus[t:t+int(1/self.dt)] = 1 # add a 1 ms stimulus
+                stimulus[t:t+int(1/self.dt)+1] = 1 # add a 1 ms stimulus
                 stimtimes.append(self.time[t])
                 stimidx.append(t)
         return stimulus, np.array(stimtimes), np.array(stimidx)
@@ -705,6 +717,7 @@ class Stimulus:
             # plt.show()
 
         return stim, stimtimes, stimindices
+
     def add_stimulus(self,stim_type,**kwargs):
         return 1
 
@@ -800,6 +813,9 @@ class Simulation:
         self.weights_e = np.array([np.full(len(self.simtime),self.neuron.w_exc[m]) for m in range(self.neuron.N_exc)])
         self.weights_i = np.array([np.full(len(self.simtime),self.neuron.w_inh[n]) for n in range(self.neuron.N_inh)])
 
+        # Short term plasticity vectors
+        self.stf_u_e = np.zeros((self.neuron.N_exc,len(self.simtime)))
+        self.stf_u_i = np.zeros((self.neuron.N_inh,len(self.simtime)))
 
         # Empty counters
         self.spikeCount = 0
@@ -811,6 +827,7 @@ class Simulation:
         self.meanCV     = 0
         self.meanSpikes = 0
         self.outputFreq = []
+        self.fr_sec = []
 
     def simulate(self,**kwargs):
         self.trials = int(kwargs.get('trials',1))
@@ -872,7 +889,7 @@ class Simulation:
 
             # Print elapsed simulation time
             if np.mod(round(self.simtime[t],1),1000) == 0 and self.trials == 1:
-                print(f'\r{round(self.simtime[t],1)/1000} / {self.t_sim/1000} s',end='')
+                print(f'\r{round(self.simtime[t],1)/1000+1} / {self.t_sim/1000} s',end='')
 
 
 
@@ -885,11 +902,12 @@ class Simulation:
             else:
                 sys.exit('Wrong STDP choice')
 
-            # print(np.sum([w[t] for w in w_e]))
-            self.weights_sum[t] = (np.sum([w[t] for w in w_e]))
-            self.normfact[t] = (1 + self.neuron.eta_norm*(self.neuron.W_tot/self.weights_sum[t] -1))
+            if self.neuron.normalize != self.neuron.stdp_types.NONE.value:
+                # print(np.sum([w[t] for w in w_e]))
+                self.weights_sum[t] = (np.sum([w[t] for w in w_e]))
+                self.normfact[t] = (1 + self.neuron.eta_norm*(self.neuron.W_tot/self.weights_sum[t] -1))
 
-            # Update EXCITATORY synaptic conductances and STDP
+            # Update EXCITATORY synaspses
             for m in range(self.neuron.N_exc):
 
 
@@ -913,6 +931,19 @@ class Simulation:
                             or self.neuron.normalize == self.neuron.stdp_types.BOTH.value):
                         w_e[m][t+1] = self.neuron.synaptic_normalization('e', w_e[m][t])
 
+
+                # STF
+                if (self.neuron.stf == self.neuron.stdp_types.BOTH.value or self.neuron.stf == self.neuron.stdp_types.EXC.value) \
+                        and m in self.neuron.w_affected:
+                    self.stf_u_e[m][t+1] = self.stf_u_e[m][t] + self.dt * self.neuron.short_term_facilitation(u=self.stf_u_e[m][t],spike=self.input.stim_exc[m][t])
+                    if self.stf_u_e[m][t+1] != 0 and self.input.stim_exc[m][t]:
+                        w_e[m][t + 1] = self.neuron.w_fixed*self.stf_u_e[m][t+1]
+                    else:
+                        w_e[m][t + 1] = w_e[m][t]
+
+                # if round(self.simtime[t], 1) >= 1499.8 and m == 0:
+                #     print(self.simtime[t])
+                #     print(w_e[m][t], w_e[m][t + 1])
 
                 self.neuron.w_exc[m] = w_e[m][t + 1]
 
@@ -992,17 +1023,18 @@ class Simulation:
             if self.neuron.ref != 0 :
                 g_ref[t+1] = g_ref[t] + self.dt * self.neuron.adaptation('RP',g_ref[t], spike)
 
-
+            # Istantaneous firing rate
             if t != 0:
                 fr[t+1] = spikeCount / self.simtime[t] * 1000
-            # Istantaneous firing rate
-            # if np.mod(round(self.simtime[t],1),1000) == 0 and t != 0:
-            #     # fr.append(scIst)
-            #     # fr.append(spikeCount/ self.simtime[t]*1000)
-            #     fr[t + 1] = spikeCount / self.simtime[t] * 1000
-            #     scIst = 0
-            # elif t  == 0:
-            #     pass# fr.append(0)
+
+            # Second-by-secomd firing rate
+            if np.mod(round(self.simtime[t],1),1000) == 0 and t != 0:
+                self.fr_sec.append(scIst)
+                scIst = 0
+            elif t  == 0:
+                self.fr_sec.append(0)
+            elif t == len(self.simtime) - 2:
+                self.fr_sec.append(scIst)
 
 
 
