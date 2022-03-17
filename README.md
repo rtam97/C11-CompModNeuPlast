@@ -39,6 +39,17 @@ In this directory are all the scripts used to generate the figures for the exerc
 [3.1 Spike-Timing Dependent Plasticity](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/exercises/exercise31_stdp.py)
 
 [3.2 Correlated Spike Trains](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/exercises/exercise32_correlated.py)
+
+[3.3 STDP with Correlations](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/exercises/exercise32_correlated.py)
+
+[4.1 Synaptic Normalization](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/exercises/exercise32_correlated.py)
+
+[4.2 Intrinsic Plasticity](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/exercises/exercise32_correlated.py)
+
+[5.1 Short-Term Facilitation](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/exercises/exercise32_correlated.py)
+
+[5.2 Short-Term Depression](https://github.com/rtam97/C11-CompModNeuPlast/blob/main/exercises/exercise32_correlated.py)
+
 ...
 
 And many more to come!
