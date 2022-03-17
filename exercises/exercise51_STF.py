@@ -18,7 +18,7 @@ elif figure == 4:
 # -------------------- NEURON -------------------- #
 lif = Neuron(type='lif',
              N_exc=10, w_exc=0.0,
-             stf='e', U_stf=U_stf, tau_stf = tau_stf,
+             stp='stf', U_stp=U_stf, tau_stf = tau_stf,
              w_fixed=1.0, w_affected=[0,1,2,3,4])
 
 # -------------------- STIMULUS -------------------- #
@@ -48,5 +48,5 @@ plt.plot(sim.fr_sec,lw=2,color='red')
 plt.ylabel('Firing rate (Hz)')
 plt.xlabel('Time (s)')
 plt.suptitle(f'U_stf : {U_stf} | tau_stf : {tau_stf} ms | stimulus : {stimtype} ({rate} Hz)',fontweight='bold')
-plt.savefig(f'../results/unit5/exercise51_{fn}.png')
+# plt.savefig(f'../results/unit5/exercise51_{fn}.png')
 plt.show()

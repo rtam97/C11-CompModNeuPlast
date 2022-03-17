@@ -83,12 +83,22 @@ class Neuron:
         self.r_target = kwargs.get('r_target',3)
 
 
-        # Short-Term Facilitation
-        self.stf = kwargs.get('stf',self.stdp_types.NONE.value)
-        self.U_stf = kwargs.get('U_stf',0.2)
-        self.tau_stf = kwargs.get('tau_stf',50)
+
+        # Short-term plasticity
+        self.stp = kwargs.get('stp',self.stp_types.NONE.value)
+        self.U_stp = kwargs.get('U_stp',0.2)
         self.w_fixed = kwargs.get('w_fixed',self.w_exc)
         self.w_affected = kwargs.get('w_affected',np.linspace(1,self.N_exc,self.N_exc)-1)
+        self.tau_stf = kwargs.get('tau_stf',250)
+        self.tau_std = kwargs.get('tau_std', 250)
+
+        # # Short-Term Facilitation - OLD
+        # self.stf = kwargs.get('stf',self.stdp_types.NONE.value)
+        # self.U_stf = kwargs.get('U_stf',0.2)
+        # self.tau_stf = kwargs.get('tau_stf',50)
+        # self.w_fixed = kwargs.get('w_fixed',self.w_exc)
+        # self.w_affected = kwargs.get('w_affected',np.linspace(1,self.N_exc,self.N_exc)-1)
+
 
         synaptic_args = ['E_exc', 'w_exc', 'tau_e', 'A_ltp_e', 'A_ltd_e',
                          'E_inh', 'w_inh', 'tau_i', 'A_ltp_i', 'A_ltd_i']
@@ -101,7 +111,7 @@ class Neuron:
         self.used_exc = 0
         self.used_inh = 0
 
-        print('\nCreated Neuron')
+        # print('\nCreated Neuron')
 
     # Set attributes to synapse
     def __set_synaptic_attributes(self, key):
@@ -353,7 +363,10 @@ class Neuron:
 
     # STF
     def short_term_facilitation(self,u,spike):
-        return -u/self.tau_stf + self.U_stf * (1-u) * spike
+        return -u/self.tau_stf + self.U_stp * (1-u) * spike
+
+    def short_term_depression(self,u,x,spike):
+        return (1-x)/self.tau_std - (u * x) * spike
 
     # Print parameters of neuron and synapses
     def print_neuron_info(self):
@@ -383,6 +396,12 @@ Synaptic strength    (w_inh) :  {self.w_inh}
     class stdp_types(Enum):
         EXC = 'e'
         INH = 'i'
+        BOTH = 'both'
+        NONE = 'none'
+
+    class stp_types(Enum):
+        STF = 'stf'
+        STD = 'std'
         BOTH = 'both'
         NONE = 'none'
 
@@ -432,7 +451,7 @@ class Stimulus:
         self.__create_stimuli()
 
     def __create_stimuli(self):
-        print('\nGenerating stimulus ....')
+        # print('\nGenerating stimulus ....')
         if self.type == self.StimulusType.CONSTANT.value:
 
             self.__generate_constant_stimulus()
@@ -816,6 +835,8 @@ class Simulation:
         # Short term plasticity vectors
         self.stf_u_e = np.zeros((self.neuron.N_exc,len(self.simtime)))
         self.stf_u_i = np.zeros((self.neuron.N_inh,len(self.simtime)))
+        self.std_x_e = np.ones((self.neuron.N_exc, len(self.simtime)))
+        self.std_x_i = np.ones((self.neuron.N_inh, len(self.simtime)))
 
         # Empty counters
         self.spikeCount = 0
@@ -828,15 +849,19 @@ class Simulation:
         self.meanSpikes = 0
         self.outputFreq = []
         self.fr_sec = []
+        self.pre_spike_count_e = np.zeros((self.neuron.N_exc,1))
+        self.pre_spike_count_i = np.zeros((self.neuron.N_inh,1))
+
 
     def simulate(self,**kwargs):
         self.trials = int(kwargs.get('trials',1))
+        self.verbose = kwargs.get('verbose',True)
 
-        print('\nSimulating ...')
+        self.printlog('\nSimulating ...')
 
         if self.trials == 1:
 
-            print('trial 1 / 1')
+            self.printlog('trial 1 / 1')
             self.__runSim()
 
         elif self.trials > 1:
@@ -889,7 +914,7 @@ class Simulation:
 
             # Print elapsed simulation time
             if np.mod(round(self.simtime[t],1),1000) == 0 and self.trials == 1:
-                print(f'\r{round(self.simtime[t],1)/1000+1} / {self.t_sim/1000} s',end='')
+                self.printlog(f'\r{round(self.simtime[t],1)/1000+1} / {self.t_sim/1000} s',end='')
 
 
 
@@ -903,13 +928,15 @@ class Simulation:
                 sys.exit('Wrong STDP choice')
 
             if self.neuron.normalize != self.neuron.stdp_types.NONE.value:
-                # print(np.sum([w[t] for w in w_e]))
+                # self.printlog(np.sum([w[t] for w in w_e]))
                 self.weights_sum[t] = (np.sum([w[t] for w in w_e]))
                 self.normfact[t] = (1 + self.neuron.eta_norm*(self.neuron.W_tot/self.weights_sum[t] -1))
 
             # Update EXCITATORY synaspses
             for m in range(self.neuron.N_exc):
 
+                if t != 0 and self.input.stim_exc[m][t] == 1 and self.input.stim_exc[m][t-1] == 0:
+                    self.pre_spike_count_e[m] += 1
 
                 # STDP
                 if self.neuron.stdp == self.neuron.stdp_types.BOTH.value or self.neuron.stdp == self.neuron.stdp_types.EXC.value:
@@ -932,18 +959,70 @@ class Simulation:
                         w_e[m][t+1] = self.neuron.synaptic_normalization('e', w_e[m][t])
 
 
-                # STF
-                if (self.neuron.stf == self.neuron.stdp_types.BOTH.value or self.neuron.stf == self.neuron.stdp_types.EXC.value) \
-                        and m in self.neuron.w_affected:
-                    self.stf_u_e[m][t+1] = self.stf_u_e[m][t] + self.dt * self.neuron.short_term_facilitation(u=self.stf_u_e[m][t],spike=self.input.stim_exc[m][t])
-                    if self.stf_u_e[m][t+1] != 0 and self.input.stim_exc[m][t]:
-                        w_e[m][t + 1] = self.neuron.w_fixed*self.stf_u_e[m][t+1]
-                    else:
-                        w_e[m][t + 1] = w_e[m][t]
 
-                # if round(self.simtime[t], 1) >= 1499.8 and m == 0:
-                #     print(self.simtime[t])
-                #     print(w_e[m][t], w_e[m][t + 1])
+                # Short-term plasticity
+                if self.neuron.stp != self.neuron.stp_types.NONE.value and m in self.neuron.w_affected:
+
+                    # STF AND STD
+                    if self.neuron.stp == self.neuron.stp_types.BOTH.value:
+
+                        # STF
+                        self.stf_u_e[m][t + 1] = self.stf_u_e[m][t] + self.dt * self.neuron.short_term_facilitation(
+                                                                                        u=self.stf_u_e[m][t],
+                                                                                        spike=self.input.stim_exc[m][t])
+                        # STD
+                        self.std_x_e[m][t + 1] = self.std_x_e[m][t] + self.dt * self.neuron.short_term_depression(
+                                                                                        u=self.stf_u_e[m][t+1],
+                                                                                        x=self.std_x_e[m][t],
+                                                                                        spike=self.input.stim_exc[m][t])
+                        # Weight update
+                        # w_e[m][t + 1] = self.neuron.w_fixed * self.stf_u_e[m][t + 1] * self.std_x_e[m][t]
+
+                        if self.stf_u_e[m][t + 1] != 0 and self.input.stim_exc[m][t]:
+                            w_e[m][t + 1] = self.neuron.w_fixed * self.stf_u_e[m][t + 1] * self.std_x_e[m][t]
+                        else:
+                            w_e[m][t + 1] = w_e[m][t]
+
+                        # if np.mod(t,5000) == 0 and m == 0:
+                        #     plt.plot(self.stf_u_e[m])
+                        #     plt.plot(self.std_x_e[m])
+                        #     plt.plot(w_e[m])
+                        #     plt.show()
+
+
+
+                    # STF ONLY
+                    elif self.neuron.stp == self.neuron.stp_types.STF.value:
+
+                        # STF
+                        self.stf_u_e[m][t + 1] = self.stf_u_e[m][t] + self.dt * self.neuron.short_term_facilitation(
+                                                                                    u=self.stf_u_e[m][t],
+                                                                                    spike=self.input.stim_exc[m][t])
+                        # Weight update
+                        if self.stf_u_e[m][t + 1] != 0 and self.input.stim_exc[m][t]:
+                            w_e[m][t + 1] = self.neuron.w_fixed * self.stf_u_e[m][t + 1]
+                        else:
+                            w_e[m][t + 1] = w_e[m][t]
+
+                    # STD ONLY
+                    elif self.neuron.stp == self.neuron.stp_types.STD.value:
+
+                        # STF
+                        self.stf_u_e[m][t + 1] = self.stf_u_e[m][t] + self.dt * self.neuron.short_term_facilitation(
+                            u=self.stf_u_e[m][t],
+                            spike=self.input.stim_exc[m][t])
+
+                        # STD
+                        self.std_x_e[m][t + 1] = self.std_x_e[m][t] + self.dt * self.neuron.short_term_depression(
+                            u=self.stf_u_e[m][t],
+                            x=self.std_x_e[m][t],
+                            spike=self.input.stim_exc[m][t])
+                        # Weight update
+                        if self.stf_u_e[m][t + 1] != 0 and self.input.stim_exc[m][t]:
+                            w_e[m][t + 1] = self.neuron.w_fixed * self.std_x_e[m][t + 1]
+                        else:
+                            w_e[m][t + 1] = w_e[m][t]
+
 
                 self.neuron.w_exc[m] = w_e[m][t + 1]
 
@@ -1039,8 +1118,9 @@ class Simulation:
 
 
 
-            if np.mod(round(self.simtime[t],1),1000) == 0 and self.neuron.eta_norm != 'none':
-                # self.neuron.V_theta = self.neuron.adjust_threshold(fr[-1])
+            # Intrinsic plasticity - Threshold adjustment
+            if np.mod(round(self.simtime[t],1),1000) == 0 and self.neuron.eta_ip != 'none':
+                # self.neuron.V_theta = self.neuron.adjust_threshold(fr_sec[-1])
                 self.neuron.V_theta = self.neuron.adjust_threshold(fr[t])
             theta[t+1] = self.neuron.V_theta
 
@@ -1083,7 +1163,7 @@ class Simulation:
         for trial in range(trials):
 
             if np.mod(trial,1) == 0:
-                print('\n%s / %s '%(trial+1,trials))
+                self.printlog('\n%s / %s '%(trial+1,trials))
 
             # Create new inputs with same parameters for each trials except 1st
             if trial != 0:
@@ -1237,7 +1317,7 @@ class Simulation:
         return plt
 
     def print_sim_parameters(self):
-        print(f"""
+        self.printlog(f"""
 # ----------- NEURON PARAMETERS ----------- #')
 N_type  =  {self.neuron.type}
 E_leak  =  {self.neuron.E_leak}   # Leak potential        (mV)
@@ -1271,7 +1351,7 @@ dt      = {self.dt}     # Integration time step (ms)
 """)
 
     def print_sim_stats(self):
-        print(f"""
+        self.printlog(f"""
 # ----------- SIMULATION STATS ----------- #')
 Number of spikes    =  {self.spikeCount}
 Firing rate         =  {self.firingRate} Hz
@@ -1338,6 +1418,13 @@ dt      = {self.dt}     # Integration time step (ms)
             print(1)
 
         print(2)
+
+    def printlog(self,str2print,**kwargs):
+        if self.verbose:
+            if kwargs.get('end',0) == '':
+                print(str2print,end='')
+            else:
+                print(str2print)
 
 
 # ------------------------------- STATS ----------------------------------- #
