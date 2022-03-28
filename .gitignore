@@ -4,6 +4,7 @@ test*
 results/temp
 literature
 *.csv
+motif_analysis
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
